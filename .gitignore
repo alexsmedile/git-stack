@@ -1,0 +1,6 @@
+.DS_Store
+**/.DS_Store
+output/*
+!output/.gitkeep
+_backups/
+_archive/

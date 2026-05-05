@@ -1,0 +1,16 @@
+{
+  "name": "git-stack",
+  "interface": {
+    "displayName": "git-stack"
+  },
+  "plugins": [
+    {
+      "name": "git-stack",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

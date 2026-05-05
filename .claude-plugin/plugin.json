@@ -1,0 +1,23 @@
+{
+  "name": "git-stack",
+  "version": "1.0.0",
+  "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
+  "author": {
+    "name": "Alex Smedile"
+  },
+  "homepage": "https://github.com/alexsmedile/git-stack",
+  "repository": "https://github.com/alexsmedile/git-stack",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "github",
+    "commit",
+    "pull-request",
+    "workflow",
+    "branching",
+    "rebase",
+    "readme",
+    "devtools",
+    "claude-code"
+  ]
+}
