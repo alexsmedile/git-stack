@@ -305,6 +305,55 @@ git bisect reset
 
 ---
 
+## History rewriting — squash all commits into one clean root
+
+**When to use:** Before publishing a repo publicly when early commits contain
+personal data, wrong author identity, or sensitive paths you want gone from
+history entirely. Also useful when a repo's full history is noise and you want
+a single clean starting point.
+
+**The orphan branch technique** is the safest approach — cleaner than
+`git rebase -i` (which can leave dangling refs) and simpler than
+`git filter-branch` (slow, error-prone).
+
+```bash
+# Step 1 — fix your files first (the current working tree must be clean)
+# Edit anything that needs changing, stage it all
+
+# Step 2 — create an orphan branch (no parent commits, all files staged)
+git checkout --orphan clean-main
+
+# Step 3 — single root commit with correct author
+git commit -m "feat: initial release — v1.0.0"
+
+# Step 4 — replace main with the orphan branch
+git branch -M clean-main main
+
+# Step 5 — force push (rewrites remote history)
+git push --force-with-lease origin main
+```
+
+**If you also have tags pointing to old commits:**
+```bash
+# Delete the old tag locally and remotely
+git tag -d v1.0.0
+git push origin :v1.0.0
+
+# Re-create tag on the new clean commit
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+**Guardrails:**
+- Only do this on repos where you control all forks/clones — rewrites break
+  anyone who has already pulled the old history
+- Always verify the working tree is exactly what you want before the orphan
+  commit — there's no going back without the old commits
+- `--force-with-lease` is safer than `--force` but will still be rejected if
+  the remote moved since your last fetch; run `git fetch` first if unsure
+
+---
+
 ## Undo operations
 
 ```bash
