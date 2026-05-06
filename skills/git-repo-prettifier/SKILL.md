@@ -1,5 +1,6 @@
 ---
 name: git-repo-prettifier
+version: 1.0.0
 description: >
   Transforms a GitHub repo README into a high-performing, visually compelling page that earns stars, gets shared, and drives adoption. Use this skill whenever the user wants to improve a README, prettify a repo, make a repo more professional, attract contributors, increase stars, or just asks "make my repo look better." Also triggers when the user asks to write a new README from scratch for any open-source project, tool, CLI, agent, or library. Goes beyond cosmetic fixes — interviews the user about positioning, brainstorms hooks and titles together, and applies design patterns (badges, tables, hero sections, visual boxes, icons) extracted from top-performing repos.
 ---

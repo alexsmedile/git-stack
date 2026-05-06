@@ -1,5 +1,6 @@
 ---
 description: Safe commit + push with full pre-flight checks. Reviews secrets, paths, gitignore, large files, branch safety, and remote state before committing and pushing.
+version: 1.0.0
 allowed-tools: Bash, Read, Glob, Grep
 argument-hint: "[commit message]"
 ---

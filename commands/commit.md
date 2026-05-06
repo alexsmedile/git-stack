@@ -1,5 +1,6 @@
 ---
 description: Safe local commit with pre-flight checks. Reviews secrets, paths, gitignore, large files, and message quality before committing.
+version: 1.0.0
 allowed-tools: Bash, Read, Glob, Grep
 argument-hint: "[commit message]"
 ---

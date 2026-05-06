@@ -1,5 +1,6 @@
 ---
 description: Update CHANGELOG.md and project docs (README, AGENTS.md, CLAUDE.md, GEMINI.md) after major changes. Auto-detects which docs exist, resolves symlinks and edits the real file. Confirms before writing anything.
+version: 1.0.0
 allowed-tools: Bash, Read, Edit, Write, Glob
 argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
 ---

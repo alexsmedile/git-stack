@@ -1,5 +1,6 @@
 ---
 description: Full release wrap-up — version bump, changelog, README patches, pre-flight checks, commit, optional tag, push. One command to close out a session.
+version: 1.0.0
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep
 argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
 ---

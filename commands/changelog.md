@@ -1,5 +1,6 @@
 ---
 description: Draft and write a CHANGELOG.md entry for changes since the last tag. Confirms before writing. No README patches, no commit, no push.
+version: 1.0.0
 allowed-tools: Bash, Read, Edit, Write
 argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
 ---

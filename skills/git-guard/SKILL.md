@@ -1,5 +1,6 @@
 ---
 name: git-guard
+version: 1.0.0
 description: >
   Git and GitHub orchestration with safe defaults — use this for branching,
   committing, opening PRs, rebasing, resolving conflicts, tagging releases,
