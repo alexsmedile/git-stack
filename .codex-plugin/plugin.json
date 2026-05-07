@@ -1,3 +1,21 @@
 {
-  "name": "git-stack"
+  "name": "git-stack",
+  "version": "1.0.0",
+  "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "git-stack",
+    "shortDescription": "Safe commits, PRs, and Git workflows for Claude Code.",
+    "longDescription": "Modular Git & GitHub skill bundle: orchestrated workflows, safe commits with pre-flight checks, pull request creation, branch management, rebase helpers, and README prettification.",
+    "developerName": "Alessandro Smedile",
+    "category": "Coding",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/alexsmedile/git-stack",
+    "defaultPrompt": [
+      "Commit and push my changes safely.",
+      "Create a pull request for this branch.",
+      "Prettify my README."
+    ],
+    "brandColor": "#f97316"
+  }
 }

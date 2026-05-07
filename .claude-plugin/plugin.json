@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
   "author": {
-    "name": "Alex Smedile"
+    "name": "Alessandro Smedile"
   },
   "homepage": "https://github.com/alexsmedile/git-stack",
   "repository": "https://github.com/alexsmedile/git-stack",

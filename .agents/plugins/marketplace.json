@@ -8,7 +8,7 @@
       "name": "git-stack",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "../../"
       },
       "category": "Productivity"
     }

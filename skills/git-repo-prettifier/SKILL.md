@@ -66,6 +66,7 @@ Ask targeted questions based on what you don't yet know:
 - **Depth level**: One-page intro or full reference doc?
 - **Prior art**: Any repos or READMEs the user loves the look and feel of?
 - **Assets available**: Logo? Screenshots? Demo GIFs? If not, should we design around text-only?
+- **SVG icon**: Ask "Do you want a custom SVG icon for the repo hero? I can generate one — or skip if you prefer text-only." If yes, ask for a brief description of what the icon should convey (concept, colors, style). Generate it at `docs/assets/<repo-name>-icon.svg` and reference it in the README hero.
 
 ### 2d. Visual style decision
 
@@ -116,6 +117,7 @@ For each major section, offer to apply visual upgrades and ask if the user wants
 - H1 + tagline + `> blockquote` summary (adds weight)
 - HTML `<div align="center">` with centered title + badges (GitHub renders this)
 - Logo image above title (only if asset exists or user wants to add one)
+- SVG icon generated inline — create at `docs/assets/<repo-name>-icon.svg`, reference with `<div align="center"><img src="docs/assets/<repo-name>-icon.svg" width="80" alt="icon" /></div>` above the H1
 
 ### Badges
 Show the full badge options, let user pick 2–5:
@@ -153,6 +155,26 @@ hormozi-orchestrator
 ```
 
 Ask if user prefers the tree or a simple prose description.
+
+### SVG flow diagram
+For tools with a **sequential workflow or pipeline**, offer an SVG flow diagram instead of ASCII. SVG renders natively in GitHub READMEs and is far more readable than text art for multi-step flows.
+
+Pattern (adapted from julianoczkowski/designer-skills):
+- Vertical stack of colored rounded-rectangle boxes, one per step
+- Left-side phase labels (e.g. "clarify", "document", "build") in muted grey
+- Arrows between steps; dashed arrow + label for optional/on-request steps
+- Right-side "iterate" loop arrow if the flow is non-linear
+- Color-code by phase type (planning / documentation / system / build / review)
+- Legend row at the bottom with color swatches
+- Subtitle above the stack: tool/command name that orchestrates the flow
+- Caption below: key behavioral notes ("confirms before advancing", "skip any phase")
+
+Save to `docs/assets/<repo-name>-flow.svg` and embed with:
+```md
+<img src="docs/assets/<repo-name>-flow.svg" width="100%" alt="flow diagram" />
+```
+
+Offer this pattern when: the repo has 3+ sequential steps, a pipeline, or an orchestrator command that runs sub-commands in order. Ask the user to confirm colors and step names before generating.
 
 ---
 

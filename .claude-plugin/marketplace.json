@@ -1,7 +1,7 @@
 {
   "name": "git-stack",
   "owner": {
-    "name": "Alex Smedile"
+    "name": "Alessandro Smedile"
   },
   "metadata": {
     "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
@@ -14,7 +14,7 @@
       "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
       "version": "1.0.0",
       "author": {
-        "name": "Alex Smedile"
+        "name": "Alessandro Smedile"
       },
       "license": "MIT",
       "homepage": "https://github.com/alexsmedile/git-stack",
