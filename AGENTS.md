@@ -18,7 +18,7 @@ git-stack/
 │   │       ├── github.md   # GitHub ops: PR, issues, releases, repo setup
 │   │       ├── workflows.md # End-to-end sequences: feature, bugfix, release, hotfix
 │   │       └── decisions.md # When to use what — situational decision guide
-│   └── git-repo-prettifier/  # README improvement skill (interactive, 4-phase)
+│   └── repo-prettifier/      # README improvement skill (interactive, 4-phase)
 │       └── SKILL.md
 └── commands/
     ├── commit.md           # /commit — safe local commit with pre-flight checks
@@ -38,7 +38,7 @@ git-stack/
 
 Reference files are loaded on demand — only read the one(s) relevant to the current task. The skill naming convention is `git-stack.<domain>.<skill>` (e.g. `git-stack.core.commit`, `git-stack.github.pr-create`).
 
-**git-repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
+**repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
 
 **commands/** are slash commands (not skills). `commit.md` and `push.md` implement pre-flight check sequences: secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, and branch safety warning. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
 

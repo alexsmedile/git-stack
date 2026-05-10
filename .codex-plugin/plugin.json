@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
   "skills": "./skills/",
+  "hooks": "./hooks/hooks-codex.json",
   "interface": {
     "displayName": "git-stack",
     "shortDescription": "Safe commits, PRs, and Git workflows for Claude Code.",

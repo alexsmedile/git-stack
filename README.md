@@ -12,7 +12,7 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 | Component | Invoked as | What it does |
 |-----------|-----------|-------------|
 | `git-guard` | `/git-stack:git-guard` | Orchestration layer for all Git/GitHub work — decision guide, atomic ops, multi-step workflows |
-| `git-repo-prettifier` | `/git-stack:git-repo-prettifier` | Interactive README upgrade — positions, designs, and writes a high-converting README |
+| `repo-prettifier` | `/git-stack:repo-prettifier` | Interactive README upgrade — positions, designs, and writes a high-converting README |
 | `/commit` | `/commit` | Safe local commit with pre-flight checks (secrets, paths, large files, `.gitignore`) |
 | `/push` | `/push` | Safe commit + push with remote state checks and branch safety warnings |
 | `/changelog` | `/changelog` | Draft and write a CHANGELOG entry for changes since the last tag |
@@ -71,7 +71,7 @@ The orchestration layer. Covers:
 
 Reference files load on demand — only what's needed for the current task.
 
-### `git-repo-prettifier`
+### `repo-prettifier`
 
 Transforms a bare README into a high-converting project page. Works interactively in 4 phases:
 
