@@ -1,6 +1,6 @@
 ---
 name: git-guard
-version: 1.2.0
+version: 1.3.0
 description: >
   Git and GitHub orchestration with safe defaults — use this for branching,
   committing, opening PRs, rebasing, resolving conflicts, tagging releases,
@@ -43,6 +43,7 @@ Read only the reference file(s) needed for the current task.
 11. Before every commit, run the secrets pattern scan from `references/core.md` → "Secrets / API key scan". If a config file always contains secrets (e.g., `settings.json`, `config.toml`), use the git clean filter pattern in `references/decisions.md` → "I want to back up a config file that always contains secrets".
 12. On request ("audit this repo", "check for leaks", "is it safe to make public"), run the three-pass repo-wide secret audit in `references/core.md` → "Repo-wide secret audit". Always check past commits, not just working tree.
 13. Before any release (`/release`, `/wrap-up`) and as a warning during `/push`, run `scripts/check-manifests.sh` to verify project-level version alignment across all detected manifests (plugin manifests, `package.json`, `pyproject.toml`, `Cargo.toml`, etc.), `CHANGELOG` top entry, and `README` badge. Block on drift for releases; warn for `/push`.
+14. When the user asks to **install a pre-commit secret-block hook** in a repo ("protect this repo from secret commits", "add the hook", "wire up the secrets guard"), invoke `scripts/install-hooks.sh <repo>`. The installer is preview-only — it prints the exact `cp` or `ln -s` command for the user to run. Never modify `.git/hooks/` automatically.
 
 **Pull requests**
 11. On team projects, default to `--draft` when no reviewer is lined up yet.

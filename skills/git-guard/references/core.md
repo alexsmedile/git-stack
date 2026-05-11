@@ -92,6 +92,23 @@ Coverage:
 
 If any pattern matches: STOP. Either (a) remove the value, (b) move it to a gitignored file + reference via env var, or (c) set up a git clean filter (see `decisions.md` → "I want to back up a config file that always contains secrets").
 
+### Installing the secret-block hook (per-repo)
+
+git-guard ships a reusable pre-commit hook at `scripts/pre-commit-block-secrets.sh` that runs the same pattern set above. To install it in a repo without modifying anything automatically, use the preview installer:
+
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/install-hooks.sh" /path/to/repo
+```
+
+This prints the exact `cp` or `ln -s` command to run. Two modes:
+
+- **Copy**: snapshots the hook script into `.git/hooks/pre-commit`. Survives git-guard upgrades; behavior is frozen at install time.
+- **Symlink**: `ln -sf` from `.git/hooks/pre-commit` to the skill's script. Auto-picks up new patterns when git-guard updates.
+
+Caveat: `.git/hooks/` is **not versioned by git**. Clones do not inherit hooks — every contributor runs the installer themselves. Document this in the project's README or `CONTRIBUTING.md`.
+
+To bypass for one commit (e.g., emergency hotfix where the false positive can be re-flagged in a follow-up): `git commit --no-verify`. Never make this a habit.
+
 ### Repo-wide secret audit (on request)
 
 Run when the user asks to **audit a repo for leaks**, **check for committed secrets**, or before opening a repo to the public. Three passes:

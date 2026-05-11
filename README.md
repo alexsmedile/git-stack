@@ -5,7 +5,7 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet)
 ![Codex](https://img.shields.io/badge/Codex-compatible-orange)
-![Version](https://img.shields.io/badge/version-1.3.0-green)
+![Version](https://img.shields.io/badge/version-1.4.0-green)
 
 ## What's Inside
 

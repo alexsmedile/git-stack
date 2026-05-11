@@ -5,6 +5,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.4.0] — 2026-05-11
+
+### Added
+- `git-guard/scripts/pre-commit-block-secrets.sh` — reusable pre-commit hook that scans staged content for known secret patterns (same set as `core.md` → "Secrets / API key scan") and blocks the commit on match. Exit 0 on clean, exit 1 on detected secret. Works as drop-in or via symlink.
+- `git-guard/scripts/install-hooks.sh` — preview-only installer. Detects the target repo's `.git/hooks/` location and prints both `cp` (snapshot) and `ln -s` (auto-update) install commands. Never modifies anything itself.
+- `git-guard` SKILL.md → safety rule #14: invoke the installer when the user asks to wire up secret protection in a repo.
+- `core.md` → new "Installing the secret-block hook (per-repo)" section with mode comparison (copy vs symlink) and `--no-verify` caveat.
+
+### Changed
+- `git-guard` skill → v1.3.0
+
+---
+
 ## [1.3.0] — 2026-05-11
 
 ### Added
