@@ -1,6 +1,6 @@
 ---
 description: Full release wrap-up — version bump, changelog, README patches, pre-flight checks, commit, optional tag, push. One command to close out a session.
-version: 1.1.0
+version: 1.2.0
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep
 argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
 ---
@@ -111,8 +111,9 @@ Line 34: v1.1.0                  →  v1.2.0
 Collect ALL findings silently — do not interrupt mid-check.
 
 ### 4a. Secrets scan
+Use the canonical pattern from `git-guard/references/core.md` → "Secrets / API key scan". Scan ADDED lines of the staged diff only — cleanup commits that remove a previously-leaked secret must NOT be flagged:
 ```bash
-git diff HEAD | grep -iE "(api_key|api_secret|secret_key|access_token|auth_token|password|passwd|private_key|-----BEGIN|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]+|AKIA[0-9A-Z]{16})" | head -30
+git diff --cached | grep '^+' | grep -v '^+++' | grep -nE '<SECRET_RE from core.md>' | head -30
 ```
 Flag matches as **HIGH**.
 
@@ -160,22 +161,30 @@ git status -sb
 ```
 Flag if remote is ahead (diverged) — do not proceed with push until resolved.
 
-### 4i. Manifest alignment (blocking for release)
+### 4i. Manifest alignment — pre-state snapshot (informational)
 ```bash
 bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
 ```
 
-The script detects all version-bearing manifests in the repo (per ecosystem) and reports drift.
+The script detects all version-bearing manifests in the repo and reports current alignment.
 
-- **Exit 0**: aligned, log as INFO.
-- **Exit 1**: drift detected — flag as **HIGH**. Show the full report at the confirm gate. Since `/wrap-up` produces a release, drift must be resolved before tagging.
-- **Exit 2**: no formal manifests — log as INFO and continue.
+- **Exit 0**: pre-bump state already aligned. Note as INFO.
+- **Exit 1**: pre-bump state already drifted. Flag as **MEDIUM** — `/wrap-up` will bump everything to the target in Phase 5.5 and re-audit in Phase 7.5, so this only matters as context. Mention it at the confirm gate.
+- **Exit 2**: no formal manifests — log as INFO and continue. Phase 5.5 will skip silently.
 
-Component-level versions (per-skill / per-command frontmatter) are informational only.
+This check is **not** the release gate. The real gate is Phase 7.5's post-write audit against the target version. Component-level versions (per-skill / per-command frontmatter) are informational only.
 
 ---
 
 ## Phase 5 — Single confirm gate
+
+Before this gate, also run a **dry-run bump preview** so the user sees exactly which manifests will be rewritten:
+
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION" --dry-run
+```
+
+Capture the planned writes — fold them into the confirm block. If exit code is 2 (no manifests detected), note "no project-level manifests — only CHANGELOG/README will change" and continue.
 
 Present everything before ANY writes:
 
@@ -184,7 +193,12 @@ WRAP-UP PLAN
 ────────────
 Version:    1.2.0  (minor — 1 skill added)
 Changelog:  1 Added, 1 Fixed
-README:     2 line patches
+README:     2 line patches (badge + table row)
+Manifests:  4 files will be bumped 1.1.0 → 1.2.0
+              .claude-plugin/plugin.json
+              .claude-plugin/marketplace.json (.metadata + .plugins[])
+              .codex-plugin/plugin.json
+              package.json
 Commit msg: "chore: release v1.2.0 — add git-repo-prettifier, fix symlink"
 Tag:        v1.2.0  (will ask after commit)
 Push:       origin/main  →  https://github.com/...
@@ -199,15 +213,15 @@ Proceed? (yes / edit / abort)
 
 - **abort** → stop. Nothing is written.
 - **edit** → show each draft (changelog entry, README patches, commit message). Let user adjust inline. Re-confirm.
-- **yes** → execute phases 6–9.
+- **yes** → execute phases 6 → 6.5 → 7 → 8 → 9.
 
 If any **HIGH** findings exist and user says "yes": ask once more explicitly before proceeding.
 
 ---
 
-## Phase 6 — Write docs
+## Phase 6 — Write docs + bump manifests
 
-### CHANGELOG.md
+### 6a. CHANGELOG.md
 If it does not exist, create with header:
 ```markdown
 # Changelog
@@ -219,8 +233,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ```
 Insert new entry at top, below the header, above any existing entries.
 
-### README.md
+### 6b. README.md
 Apply only the patches confirmed in Phase 3. Do not touch unscoped sections.
+
+### 6c. Bump every detected manifest
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION"
+```
+
+The script writes the target version into every detected project-level location (plugin manifests, package.json, pyproject.toml, Cargo.toml, etc., README badge). Idempotent — files already at the target version are skipped.
+
+- **Exit 0**: writes succeeded (or nothing needed bumping).
+- **Exit 1**: a write failed. Surface the script's stderr and **abort the wrap-up** before commit. Some files may be partially updated — tell the user to inspect before retrying.
+- **Exit 2**: no manifests detected. Continue silently (only CHANGELOG/README changed).
+
+---
+
+## Phase 6.5 — Post-write audit gate (the real release gate)
+
+Re-run the alignment check now that everything has been bumped:
+
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
+```
+
+Then verify every reported version equals `$VERSION`:
+
+- **Exit 0 AND every project-level entry equals `$VERSION`** → ✓ aligned. Continue to Phase 7.
+- **Exit 0 BUT some entry ≠ `$VERSION`** (e.g. CHANGELOG top entry didn't get bumped, or a manifest the bumper doesn't know about) → drift against target. Show the diff and ask:
+  ```
+  ⚠ Post-write audit: <N> location(s) still at <old-version>:
+      <list>
+  Auto-fix by re-running bump-manifests.sh? (yes / abort)
+  ```
+  - **yes** → re-run bump-manifests.sh, then re-run check-manifests.sh once more. If it still drifts, abort with the offending paths.
+  - **abort** → stop before commit. The repo has the new docs + (mostly) bumped manifests but no commit. User can fix manually and retry.
+- **Exit 1** (general drift) → same flow as above.
+- **Exit 2** (no manifests) → fine, continue to Phase 7.
+
+This is the gate that actually prevents shipping a misaligned release.
 
 ---
 

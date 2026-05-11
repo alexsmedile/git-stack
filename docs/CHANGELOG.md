@@ -5,6 +5,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.5.0] — 2026-05-12
+
+### Added
+- `git-guard/scripts/bump-manifests.sh` — companion to `check-manifests.sh`. Writes a target version into every detected project-level manifest (plugin.json, marketplace.json, package.json, pyproject.toml, Cargo.toml, composer.json, *.gemspec, pom.xml, build.gradle, VERSION, README badge). Idempotent. Component-level frontmatter and CHANGELOG entries are not touched. Exit 0 success, 1 write failure, 2 nothing detected.
+- `git-guard` SKILL.md → safety rule #15: releases must use the **bump → audit** pattern. Pre-write check is informational only; the post-write audit against the target version is the real release gate.
+
+### Changed
+- `/wrap-up` → v1.2.0: Phase 4i (manifest alignment) downgraded to "pre-state snapshot" (informational). New Phase 6c executes `bump-manifests.sh`. New Phase 6.5 re-audits against the target version and offers auto-fix on remaining drift. The post-write audit is now the real release gate.
+- `/release` → v1.2.0: Step 2.5 split into 2.5a (dry-run preview), 2.5b (execute bump), 2.5c (post-write audit + auto-fix). Closing reminder about manual manifest bumps removed — the bumper handles it.
+- `git-guard` SKILL.md rule #13: now scoped to `/push` only (informational warning). Release-time manifest behavior moved to new rule #15.
+- `git-guard` skill → v1.4.0.
+
+### Fixed
+- `pre-commit-block-secrets.sh` and the canonical secrets-scan snippet in `core.md`, `commands/commit.md`, `commands/wrap-up.md`: now scan ADDED lines only (`grep '^+' | grep -v '^+++'`). Previous behavior matched on `-` lines too, which blocked legitimate cleanup commits that removed a previously-leaked secret. Cleanup commits no longer require `--no-verify`.
+
+---
+
 ## [1.4.0] — 2026-05-11
 
 ### Added

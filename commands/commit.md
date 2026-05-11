@@ -32,9 +32,9 @@ Run each check below. **Collect ALL findings before asking the user — do not i
 Each check links to its canonical definition in git-guard. If you've already loaded `git-guard/references/core.md` for this turn, reuse the patterns and severity tables from there.
 
 ### 2a. Secrets / API keys
-Use the regex from `git-guard/references/core.md` → "Secrets / API key scan". Apply to staged + unstaged tracked content:
+Use the regex from `git-guard/references/core.md` → "Secrets / API key scan". Scan ADDED lines only of the staged diff (`'^+'` filter, exclude `'+++'` headers) so cleanup commits removing previously-leaked secrets are NOT flagged:
 ```bash
-git diff HEAD | grep -nE '<SECRET_RE from core.md>'
+git diff --cached | grep '^+' | grep -v '^+++' | grep -nE '<SECRET_RE from core.md>'
 ```
 Severity: HIGH. Block on match unless user explicitly overrides.
 

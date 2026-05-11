@@ -1,6 +1,6 @@
 ---
 name: git-guard
-version: 1.3.0
+version: 1.4.0
 description: >
   Git and GitHub orchestration with safe defaults — use this for branching,
   committing, opening PRs, rebasing, resolving conflicts, tagging releases,
@@ -42,8 +42,9 @@ Read only the reference file(s) needed for the current task.
 10. Warn before committing any file >500KB — confirm it belongs in the repo.
 11. Before every commit, run the secrets pattern scan from `references/core.md` → "Secrets / API key scan". If a config file always contains secrets (e.g., `settings.json`, `config.toml`), use the git clean filter pattern in `references/decisions.md` → "I want to back up a config file that always contains secrets".
 12. On request ("audit this repo", "check for leaks", "is it safe to make public"), run the three-pass repo-wide secret audit in `references/core.md` → "Repo-wide secret audit". Always check past commits, not just working tree.
-13. Before any release (`/release`, `/wrap-up`) and as a warning during `/push`, run `scripts/check-manifests.sh` to verify project-level version alignment across all detected manifests (plugin manifests, `package.json`, `pyproject.toml`, `Cargo.toml`, etc.), `CHANGELOG` top entry, and `README` badge. Block on drift for releases; warn for `/push`.
+13. During `/push`, run `scripts/check-manifests.sh` as an informational warning — `/push` is not a release, so drift is surfaced but does not block.
 14. When the user asks to **install a pre-commit secret-block hook** in a repo ("protect this repo from secret commits", "add the hook", "wire up the secrets guard"), invoke `scripts/install-hooks.sh <repo>`. The installer is preview-only — it prints the exact `cp` or `ln -s` command for the user to run. Never modify `.git/hooks/` automatically.
+15. For releases (`/release`, `/wrap-up`), use the **bump → audit** pattern: (a) preview with `scripts/bump-manifests.sh <target> --dry-run`, (b) execute `scripts/bump-manifests.sh <target>` to write the target version into every detected project-level location, (c) re-run `scripts/check-manifests.sh` and verify every reported version equals `<target>`. The post-write audit is the real release gate. If any location still drifts, offer to re-run the bumper; if it still drifts after that, abort before commit/tag. The bumper does **not** touch component-level frontmatter (per-skill, per-command) — those evolve independently. The bumper does **not** write CHANGELOG entries — that remains the command's responsibility.
 
 **Pull requests**
 11. On team projects, default to `--draft` when no reviewer is lined up yet.

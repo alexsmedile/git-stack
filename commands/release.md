@@ -1,6 +1,6 @@
 ---
 description: Tag a release version, update CHANGELOG.md, and push the tag to remote. Runs /update-docs first if CHANGELOG needs updating.
-version: 1.1.0
+version: 1.2.0
 allowed-tools: Bash, Read, Edit, Write
 argument-hint: "[version]"
 ---
@@ -38,22 +38,43 @@ git branch --show-current
 
 ---
 
-## Step 2.5 — Manifest alignment (blocking)
+## Step 2.5 — Bump manifests + audit against target
 
-Run the manifest auditor from git-guard:
+`/release` owns version alignment end-to-end. Two passes: bump everything, then verify.
 
+### 2.5a. Dry-run preview
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION" --dry-run
+```
+
+Show the planned writes. If exit 2 (no manifests detected), note "no project-level manifests — only CHANGELOG/tag will change" and skip 2.5b/2.5c. If any planned write would change a file, ask: **"Bump these N file(s) to vX.Y.Z? (yes / abort)"**
+
+### 2.5b. Execute bump
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION"
+```
+
+- **Exit 0**: continue.
+- **Exit 1**: a write failed. Surface stderr and **abort** — some files may be partially updated, do not commit or tag in this state.
+
+### 2.5c. Post-write audit (the real gate)
 ```bash
 bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
 ```
 
-The script detects which ecosystems the repo uses (Claude plugin / Codex plugin / Node / Python / Rust / etc.) and checks every project-level version field, plus CHANGELOG top entry and README badge.
+Verify every reported version equals `$VERSION`:
 
-- **Exit 0 (aligned)**: continue.
-- **Exit 1 (drift)**: STOP. Show the full report. Ask: **"Project-level versions disagree. Fix and re-run, or override? (fix / override / abort)"**
-  - `fix`: pause, let the user align the offending files, then re-run this step.
-  - `override`: continue but warn the release will ship with mismatched manifests.
+- **All entries == `$VERSION`** → ✓ continue.
+- **Some entry ≠ `$VERSION`** (e.g. CHANGELOG top entry will be written in step 3, or a manifest the bumper doesn't know about) → list the offenders and ask:
+  ```
+  ⚠ Post-write audit: <N> location(s) still at <old-version>:
+      <list>
+  Auto-fix by re-running bump-manifests.sh? (yes / continue anyway / abort)
+  ```
+  - `yes`: re-run bumper, then re-audit. If still drifting, abort.
+  - `continue anyway`: warn the release will ship with the listed mismatches and continue.
   - `abort`: stop.
-- **Exit 2 (nothing found)**: note in summary, continue (some repos have no formal manifest).
+- **Exit 2 (nothing found)**: continue.
 
 Component-level versions (per-skill / per-command frontmatter) are shown for visibility only — they evolve independently and never block.
 
@@ -113,4 +134,4 @@ Next steps:
   /plugin marketplace update <plugin-name>     # if this is a Claude Code plugin
 ```
 
-If the repo has a `.claude-plugin/` directory, remind the user to also bump `version` in `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `.codex-plugin/plugin.json` if not already done.
+All version-bearing manifests were bumped in Step 2.5. If the user added new manifest files outside the bumper's detection (rare), they will need to align those manually.

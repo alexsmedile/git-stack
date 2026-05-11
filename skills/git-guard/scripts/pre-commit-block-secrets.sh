@@ -17,7 +17,10 @@ set -uo pipefail
 PATTERNS='(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
 
 # Inspect what git is ACTUALLY about to commit (after any clean filters).
-hits=$(git diff --cached -U0 2>/dev/null | grep -nE "$PATTERNS" || true)
+# Scan ADDED lines only — '^+' filter excludes '-' (deletions) so cleanup
+# commits removing a previously-leaked secret aren't blocked by the hook.
+# 'grep -v "^+++"' drops the file-header lines that also start with '+'.
+hits=$(git diff --cached -U0 2>/dev/null | grep '^+' | grep -v '^+++' | grep -nE "$PATTERNS" || true)
 
 if [ -z "$hits" ]; then
   exit 0
