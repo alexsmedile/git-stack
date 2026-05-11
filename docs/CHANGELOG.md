@@ -5,6 +5,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.3.0] — 2026-05-11
+
+### Added
+- `git-guard/scripts/check-manifests.sh` — general-purpose manifest auditor that detects which ecosystems a repo uses (Claude plugin, Codex plugin, Node, Python, Rust, PHP, Ruby, Maven, Gradle, generic `VERSION` file) and verifies every project-level version field aligns: plugin manifests, package manifests, `CHANGELOG.md` top entry, `README.md` shields.io badge. Reports drift with severity and exit codes (0 aligned, 1 drift, 2 nothing-found). Component-level versions (per-skill/per-command frontmatter) shown informationally.
+- `git-guard` SKILL.md → safety rule #13: run the manifest auditor before any release.
+- `/release` → Step 2.5: manifest alignment check, BLOCKS on drift, asks fix/override/abort.
+- `/wrap-up` → Phase 4i: same check, HIGH severity, blocks the release confirmation gate.
+- `/push` → Step 2h: same check, WARNING severity (push isn't a release, so drift is informational).
+
+### Changed
+- `git-guard` skill → v1.2.0
+- `/push` → v2.1.0, `/wrap-up` → v1.1.0, `/release` → v1.1.0
+
+---
+
 ## [1.2.0] — 2026-05-11
 
 ### Added

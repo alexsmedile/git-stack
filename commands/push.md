@@ -1,6 +1,6 @@
 ---
 description: Safe commit + push with full pre-flight checks. Reviews secrets, paths, gitignore, large files, branch safety, and remote state before committing and pushing.
-version: 2.0.0
+version: 2.1.0
 allowed-tools: Bash, Read, Glob, Grep
 argument-hint: "[commit message]"
 ---
@@ -38,6 +38,7 @@ Run all checks defined in `/commit` Step 2 (same canonical list from `git-guard/
 - 2e. `.gitignore` audit
 - 2f. Unstaged changes
 - 2g. Branch safety (rule #1: never push directly to `main`)
+- 2h. Manifest alignment — run `${CLAUDE_SKILL_DIR}/scripts/check-manifests.sh` from the repo root. Reports drift across project-level version fields (plugin manifests, package.json/Cargo.toml/etc., CHANGELOG top entry, README badge). Severity: WARNING for `/push` (drift is informational here — it's blocking for `/release` and `/wrap-up`). Show the full report in the preflight summary so the user sees it before pushing.
 
 Collect ALL findings before asking the user.
 

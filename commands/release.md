@@ -1,6 +1,6 @@
 ---
 description: Tag a release version, update CHANGELOG.md, and push the tag to remote. Runs /update-docs first if CHANGELOG needs updating.
-version: 1.0.0
+version: 1.1.0
 allowed-tools: Bash, Read, Edit, Write
 argument-hint: "[version]"
 ---
@@ -35,6 +35,27 @@ git branch --show-current
 
 - If there are uncommitted changes: warn and ask **"You have uncommitted changes — commit first or proceed anyway? (commit first / proceed / abort)"**
 - If not on `main` or the designated release branch: warn **"You are on branch <name>, not main — tag here anyway? (yes / abort)"**
+
+---
+
+## Step 2.5 — Manifest alignment (blocking)
+
+Run the manifest auditor from git-guard:
+
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
+```
+
+The script detects which ecosystems the repo uses (Claude plugin / Codex plugin / Node / Python / Rust / etc.) and checks every project-level version field, plus CHANGELOG top entry and README badge.
+
+- **Exit 0 (aligned)**: continue.
+- **Exit 1 (drift)**: STOP. Show the full report. Ask: **"Project-level versions disagree. Fix and re-run, or override? (fix / override / abort)"**
+  - `fix`: pause, let the user align the offending files, then re-run this step.
+  - `override`: continue but warn the release will ship with mismatched manifests.
+  - `abort`: stop.
+- **Exit 2 (nothing found)**: note in summary, continue (some repos have no formal manifest).
+
+Component-level versions (per-skill / per-command frontmatter) are shown for visibility only — they evolve independently and never block.
 
 ---
 

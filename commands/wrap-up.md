@@ -1,6 +1,6 @@
 ---
 description: Full release wrap-up — version bump, changelog, README patches, pre-flight checks, commit, optional tag, push. One command to close out a session.
-version: 1.0.0
+version: 1.1.0
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep
 argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
 ---
@@ -159,6 +159,19 @@ git fetch origin 2>/dev/null
 git status -sb
 ```
 Flag if remote is ahead (diverged) — do not proceed with push until resolved.
+
+### 4i. Manifest alignment (blocking for release)
+```bash
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
+```
+
+The script detects all version-bearing manifests in the repo (per ecosystem) and reports drift.
+
+- **Exit 0**: aligned, log as INFO.
+- **Exit 1**: drift detected — flag as **HIGH**. Show the full report at the confirm gate. Since `/wrap-up` produces a release, drift must be resolved before tagging.
+- **Exit 2**: no formal manifests — log as INFO and continue.
+
+Component-level versions (per-skill / per-command frontmatter) are informational only.
 
 ---
 
