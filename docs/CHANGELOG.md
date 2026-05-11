@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.2.0] — 2026-05-11
+
+### Added
+- `git-guard` SKILL.md → safety rules #11 (pre-commit secrets scan) and #12 (on-request repo-wide audit of working tree + git history)
+- `git-guard/references/core.md` → "Secrets / API key scan" with patterns for OpenAI (`sk-proj-`, `sk-`), Anthropic (`sk-ant-`), Jina, Tavily, Apify, GitHub PATs (`ghp_`, `gho_`, `github_pat_`), AWS (`AKIA`), Google (`AIza`), Slack (`xoxb-`), Hugging Face (`hf_`), and PEM private key blocks
+- `git-guard/references/core.md` → "Repo-wide secret audit" (3-pass: tracked files, env/config files, full git history) with severity table and false-positive guidance
+- `git-guard/references/decisions.md` → "I want to back up a config file that always contains secrets" branch documenting the git clean-filter pattern with full setup steps (`.gitattributes` + `scripts/redact-secrets.sh` + pre-commit safety net)
+
+### Changed
+- `/commit` and `/push` → v2.0.0: rewritten as thin orchestrators that reference `git-guard/references/core.md` for canonical scan patterns; eliminates duplication between command checks and skill knowledge
+- `git-guard` skill bumped to v1.1.0 (new behavior, backwards-compatible)
+
+---
+
 ## [1.1.0] — 2026-05-10
 
 ### Added
