@@ -1,13 +1,15 @@
 ---
 description: Safe local commit with pre-flight checks. Reviews secrets, paths, gitignore, large files, and message quality before committing.
-version: 1.0.0
+version: 2.0.0
 allowed-tools: Bash, Read, Glob, Grep
 argument-hint: "[commit message]"
 ---
 
 # /commit — Safe Local Commit
 
-Run all pre-flight checks, then commit locally. Do NOT push.
+Thin orchestrator. Owns the **sequence and confirmation flow**. Delegates **what to check** to the `git-guard` skill — load `skills/git-guard/references/core.md` and apply the rules defined there.
+
+Goal: pre-flight → report → confirm → commit. Do NOT push.
 
 ---
 
@@ -19,70 +21,59 @@ git diff --cached --stat
 git diff --stat
 ```
 
-If there are no changes at all (clean working tree, nothing staged), stop and tell the user. Nothing to commit.
+If clean working tree and nothing staged → stop, tell the user. Nothing to commit.
 
 ---
 
 ## Step 2 — Pre-flight checks
 
-Run each check. Collect ALL findings before asking the user — do not interrupt mid-check.
+Run each check below. **Collect ALL findings before asking the user — do not interrupt mid-check.**
 
-### 2a. Secrets scan
-Search staged and unstaged tracked files for patterns that look like secrets:
+Each check links to its canonical definition in git-guard. If you've already loaded `git-guard/references/core.md` for this turn, reuse the patterns and severity tables from there.
+
+### 2a. Secrets / API keys
+Use the regex from `git-guard/references/core.md` → "Secrets / API key scan". Apply to staged + unstaged tracked content:
 ```bash
-git diff HEAD | grep -iE "(api_key|api_secret|secret_key|access_token|auth_token|password|passwd|private_key|-----BEGIN|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]+|AKIA[0-9A-Z]{16})" | head -30
+git diff HEAD | grep -nE '<SECRET_RE from core.md>'
 ```
-Flag any matches as HIGH severity.
+Severity: HIGH. Block on match unless user explicitly overrides.
 
-### 2b. .env files staged
+### 2b. `.env` files staged
 ```bash
 git diff --cached --name-only | grep -E "^\.env$|\.env\."
 ```
-Flag any `.env` file staged as HIGH severity. It should be in `.gitignore`.
+Severity: HIGH. `.env` belongs in `.gitignore`.
 
 ### 2c. Hardcoded absolute paths
-Search staged changes for hardcoded user paths:
 ```bash
 git diff --cached | grep -E "(/Users/[a-zA-Z]+/|/home/[a-zA-Z]+/)" | grep -v "^---\|^+++" | head -20
 ```
-Flag matches as MEDIUM severity — ask if intentional.
+Severity: MEDIUM. Ask if intentional.
 
 ### 2d. Large files
 ```bash
 git diff --cached --name-only | xargs -I{} find . -name "{}" -size +500k 2>/dev/null
-```
-Also check:
-```bash
 find . -not -path "./.git/*" -size +1M -not -path "./node_modules/*" 2>/dev/null | head -10
 ```
-Flag files >500KB staged, and warn about any file >1MB in the repo.
+Flag >500KB staged. Warn about >1MB in repo.
 
-### 2e. .gitignore check
-```bash
-cat .gitignore 2>/dev/null || echo "NO_GITIGNORE"
-```
-If no `.gitignore` exists, flag as MEDIUM — suggest creating one.
-If `.gitignore` exists, check it covers common patterns: `.env`, `node_modules/`, `*.log`, `_archive/`, `_backups/`, `__pycache__/`, `.DS_Store`.
-Report any commonly missing patterns.
+### 2e. `.gitignore` audit
+Per `git-guard/SKILL.md` rule #9: `.gitignore` must exist before the first commit on any new repo. Verify it covers `.env`, `node_modules/`, `*.log`, `_archive/`, `_backups/`, `__pycache__/`, `.DS_Store`.
 
-### 2f. Unstaged changes left behind
+### 2f. Unstaged changes
 ```bash
 git diff --stat
 ```
-If there are unstaged changes on tracked files, show them and ask the user: **"You have unstaged changes — do you want to include them?"**
-If yes, run `git add -u` before committing (do NOT use `git add .` unless user explicitly says so).
+If unstaged changes exist on tracked files: ask **"You have unstaged changes — include them?"** Use `git add -u` if yes, never `git add .` unless explicit.
 
-### 2g. Branch check
-```bash
-git branch --show-current
-```
-If on `main` or `master`, warn: **"You are committing directly to main — is this intentional?"**
+### 2g. Branch safety
+Per `git-guard/SKILL.md` rule #1: never commit directly to `main`. If `git branch --show-current` returns `main` or `master`, warn explicitly.
 
 ---
 
 ## Step 3 — Report & confirm
 
-Present a single summary block:
+Single summary block:
 
 ```
 PRE-FLIGHT REPORT
@@ -95,23 +86,22 @@ PRE-FLIGHT REPORT
 Staged: 3 files changed, 42 insertions, 7 deletions
 ```
 
-Then ask: **"Proceed with commit? (yes / fix first / abort)"**
+Ask: **"Proceed with commit? (yes / fix first / abort)"**
 
-- If "fix first": pause, let the user fix, then re-run checks from Step 2.
-- If "abort": stop. Do not commit.
-- If HIGH severity findings exist and user says "yes": confirm once more explicitly.
+- `fix first`: pause, let user fix, re-run Step 2.
+- `abort`: stop.
+- `yes` with HIGH findings: confirm once more explicitly.
 
 ---
 
 ## Step 4 — Commit message
 
-If $ARGUMENTS is provided, use it verbatim as the commit message.
+If `$ARGUMENTS` is provided → use verbatim.
 
-If $ARGUMENTS is empty:
-- Run `git diff --cached` to read staged changes
-- Write a concise conventional commit message: `type: summary` (e.g. `feat: add user auth`, `fix: correct path resolution`)
-- Show the message to the user and ask: **"Commit with this message? (yes / edit)"**
-- If "edit": ask for the message.
+Otherwise:
+- Read `git diff --cached`.
+- Draft Conventional Commits message per `git-guard/references/core.md` → "git-stack.core.commit" (format, types, imperative mood, ≤72 chars).
+- Show and ask: **"Commit with this message? (yes / edit)"**
 
 ---
 
@@ -122,6 +112,11 @@ git add -u   # only if user confirmed unstaged changes in 2f
 git commit -m "<message>"
 ```
 
-Report: commit hash, branch, files changed.
+Report: commit hash, branch, files changed. Do NOT push.
 
-Do NOT push.
+---
+
+## Notes
+
+- Patterns and severity definitions live in `git-guard/references/core.md`. If you spot drift between this command and core.md, core.md wins.
+- For repos that intentionally back up config files containing secrets, see `git-guard/references/decisions.md` → "I want to back up a config file that always contains secrets" (clean-filter pattern). Skip 2a for those files.

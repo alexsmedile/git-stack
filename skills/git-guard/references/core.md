@@ -64,6 +64,65 @@ Closes #88"
 - Use imperative mood: "add" not "added", "fix" not "fixed"
 - Body (optional) explains *why*, not *what*; blank line between subject and body
 
+### Secrets / API key scan
+
+Run BEFORE every commit. Catches accidental commits of provider keys, GitHub tokens, AWS access keys, private key blocks, etc.
+
+```bash
+# Scan staged diff for known secret patterns
+git diff --cached | grep -nE '(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
+```
+
+Coverage:
+
+| Pattern              | Vendor                     |
+|----------------------|----------------------------|
+| `sk-proj-…`          | OpenAI project keys        |
+| `sk-ant-…`           | Anthropic                  |
+| `sk-…`               | OpenAI legacy / generic    |
+| `jina_…`             | Jina AI                    |
+| `tvly-dev-…` / `tvly-prod-…` | Tavily                |
+| `apify_api_…`        | Apify                      |
+| `ghp_…` / `gho_…` / `github_pat_…` | GitHub tokens (classic / OAuth / fine-grained) |
+| `AKIA…`              | AWS access key IDs         |
+| `AIza…`              | Google API keys            |
+| `xoxb-…`             | Slack bot tokens           |
+| `hf_…`               | Hugging Face               |
+| `-----BEGIN ... PRIVATE KEY-----` | RSA/EC/OpenSSH/PGP private key blocks |
+
+If any pattern matches: STOP. Either (a) remove the value, (b) move it to a gitignored file + reference via env var, or (c) set up a git clean filter (see `decisions.md` → "I want to back up a config file that always contains secrets").
+
+### Repo-wide secret audit (on request)
+
+Run when the user asks to **audit a repo for leaks**, **check for committed secrets**, or before opening a repo to the public. Three passes:
+
+```bash
+# Shared pattern (export once)
+SECRET_RE='(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
+
+# 1. Currently tracked files (the live working tree, only files git knows about)
+git ls-files -z | xargs -0 grep -nHE "$SECRET_RE" 2>/dev/null
+
+# 2. All env / config files in the working tree (tracked OR ignored — catches misconfigured .gitignore)
+find . -type f \( -name '.env*' -o -name '*.env' -o -name 'config.toml' -o -name 'settings.json' -o -name 'secrets.*' -o -name '*.pem' -o -name '*.key' \) -not -path './.git/*' -not -path './node_modules/*' 2>/dev/null \
+  | xargs grep -nHE "$SECRET_RE" 2>/dev/null
+
+# 3. Full git history (every blob ever committed, on every branch)
+git log --all -p -- . | grep -nE "$SECRET_RE"
+```
+
+Reporting:
+
+| Finding location              | Severity | Action                                                          |
+|-------------------------------|----------|-----------------------------------------------------------------|
+| Working tree, NOT in `.gitignore` | HIGH | Rotate key, gitignore the file, restore-from-env pattern         |
+| Working tree, gitignored      | LOW      | OK if intentional (local dev). Mention it.                       |
+| Git history (any past commit) | CRITICAL | **Rotate immediately**, then `git filter-repo` to scrub, force-push, notify collaborators |
+
+Common false positives: example/template files (`*.example`, `*.template`), test fixtures, and documentation strings showing placeholder formats. Confirm before flagging.
+
+The history scan is slow on large repos — warn the user and offer to scope it: `git log --all -p -- path/to/dir | grep …`.
+
 ---
 
 ## git-stack.core.branch

@@ -206,6 +206,33 @@ git rebase --continue   # or git merge --continue
   - Notify collaborators to re-clone
   - Consider GitHub's secret scanning alerts
 
+**"I want to back up a config file that always contains secrets"** (e.g., `~/.claude/settings.json`, `~/.codex/config.toml`)
+→ Use a **git clean filter**: the working tree keeps real values, but the committed blob is redacted automatically. Pattern:
+
+1. Create `scripts/redact-secrets.sh` (a sed pipeline that replaces secret values with `…REDACTED`, preserving the key name and file shape).
+2. Mark it executable: `chmod +x scripts/redact-secrets.sh`.
+3. Add to `.gitattributes`:
+   ```
+   path/to/settings.json filter=redact-secrets
+   path/to/config.toml   filter=redact-secrets
+   ```
+4. Register the filter in the repo (not committed — local config):
+   ```bash
+   git config filter.redact-secrets.clean "./scripts/redact-secrets.sh"
+   git config filter.redact-secrets.smudge "cat"
+   git config filter.redact-secrets.required true
+   ```
+5. Re-stage covered files so the filter applies: `git rm --cached <file> && git add <file>`.
+6. Verify the committed blob: `git show :path/to/settings.json | head` — should show `…REDACTED`.
+7. Add a `pre-commit` hook (`.git/hooks/pre-commit`) as a safety net that greps staged content for the same patterns from `core.md` and blocks commits if anything slips through (catches files not yet listed in `.gitattributes`).
+
+Real-world example: `~/code/utils/dotagents/` uses this exact setup for Claude/Codex/Gemini config backups.
+
+Caveats:
+- `.git/hooks/` is not versioned — store the hook script in `scripts/hooks/` and `setup.sh` it on clone.
+- Filter `required = true` means clones without the filter script will fail loudly instead of silently committing real secrets. Good.
+- Rotate any key that was ever committed before the filter was installed.
+
 ---
 
 ## Common pitfalls

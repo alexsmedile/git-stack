@@ -1,6 +1,6 @@
 ---
 name: git-guard
-version: 1.0.0
+version: 1.1.0
 description: >
   Git and GitHub orchestration with safe defaults — use this for branching,
   committing, opening PRs, rebasing, resolving conflicts, tagging releases,
@@ -40,6 +40,8 @@ Read only the reference file(s) needed for the current task.
 8. Secrets never go in Git — `.env` must be in `.gitignore` before the first commit.
 9. `.gitignore` must exist before the first commit on any new repo.
 10. Warn before committing any file >500KB — confirm it belongs in the repo.
+11. Before every commit, run the secrets pattern scan from `references/core.md` → "Secrets / API key scan". If a config file always contains secrets (e.g., `settings.json`, `config.toml`), use the git clean filter pattern in `references/decisions.md` → "I want to back up a config file that always contains secrets".
+12. On request ("audit this repo", "check for leaks", "is it safe to make public"), run the three-pass repo-wide secret audit in `references/core.md` → "Repo-wide secret audit". Always check past commits, not just working tree.
 
 **Pull requests**
 11. On team projects, default to `--draft` when no reviewer is lined up yet.
