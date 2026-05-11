@@ -40,7 +40,7 @@ Reference files are loaded on demand — only read the one(s) relevant to the cu
 
 **repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
 
-**commands/** are slash commands (not skills). `commit.md` and `push.md` implement pre-flight check sequences: secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, and branch safety warning. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
+**commands/** are slash commands (not skills). `commit.md` and `push.md` are **thin orchestrators** — they own the sequence and confirmation flow, while `git-guard/references/core.md` owns the canonical pattern definitions and severity rules (secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, branch safety warning). Update patterns in core.md once, both commands inherit. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
 
 ## Key Safety Rules (apply to all skills in this bundle)
 

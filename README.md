@@ -5,7 +5,7 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet)
 ![Codex](https://img.shields.io/badge/Codex-compatible-orange)
-![Version](https://img.shields.io/badge/version-1.0.0-green)
+![Version](https://img.shields.io/badge/version-1.2.0-green)
 
 ## What's Inside
 
@@ -67,6 +67,7 @@ The orchestration layer. Covers:
 - **Atomic ops** — commit, branch, merge, rebase, stash, worktree
 - **GitHub ops** — PRs, issues, releases, repo setup
 - **Workflows** — feature, bugfix, refactor, release, hotfix sequences
+- **Secrets safety** — canonical pre-commit patterns + on-request repo-wide audit (working tree + git history) + git clean-filter recipe for config files that always contain secrets
 - **Decision guide** — when to use what, risk table, common situation → action map
 
 Reference files load on demand — only what's needed for the current task.
@@ -84,9 +85,9 @@ Transforms a bare README into a high-converting project page. Works interactivel
 
 ### `/commit`
 
-Safe local commit. Runs before writing anything:
+Safe local commit. Thin orchestrator that runs the canonical preflight from `git-guard`:
 
-- Secrets scan (API keys, tokens, private keys)
+- Secrets scan (canonical patterns from `git-guard/references/core.md` → OpenAI, Anthropic, GitHub, AWS, Google, Slack, Hugging Face, PEM blocks, etc.)
 - `.env` detection
 - Hardcoded absolute path detection
 - Large file check (>500KB staged, >1MB in repo)
@@ -104,6 +105,7 @@ Everything `/commit` does, plus:
 - Diverged history warning
 - Upstream branch detection
 - Push with `--set-upstream` when needed
+- Force-push guardrail — `--force-with-lease` only, never to shared branches (per git-guard rule #4)
 
 ### `/changelog`
 
