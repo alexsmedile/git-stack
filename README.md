@@ -19,45 +19,44 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 | `/update-docs` | `/update-docs` | Update CHANGELOG + all project docs (README, AGENTS, CLAUDE, GEMINI) after major changes |
 | `/wrap-up` | `/wrap-up` | Full release wrap-up — version bump, changelog, README patches, commit, tag, push |
 
-## Quick Start
+## Install
 
-### Claude Code — install from marketplace
+### Claude Code — marketplace
 
 ```bash
 /plugin marketplace add alexsmedile/git-stack
 /plugin install git-stack@git-stack
 ```
 
-Or open the interactive plugin manager:
+Or open the interactive `/plugin` manager and browse from there.
 
-```
-/plugin
-```
+### Codex — marketplace
 
-### Claude Code — test locally without installing
+Fastest — one command, activates the plugin directly:
 
 ```bash
-claude --plugin-dir ./
+npx codex-marketplace add alexsmedile/git-stack --plugin
 ```
 
-### Codex — install from GitHub
+Or via the built-in plugin manager:
 
 ```bash
 codex plugin marketplace add alexsmedile/git-stack
 # then: codex /plugins → browse and install
 ```
 
-### Codex — install from local clone
-
-```bash
-codex plugin marketplace add ./git-stack
-# then: codex /plugins → browse and install
-```
-
-### Vercel skills — install via npx
+### npx skills
 
 ```bash
 npx skills add alexsmedile/git-stack
+```
+
+### Test locally (no install)
+
+```bash
+git clone https://github.com/alexsmedile/git-stack
+claude --plugin-dir ./git-stack                  # Claude Code
+npx codex-marketplace add ./git-stack --plugin   # Codex
 ```
 
 ## Skills
