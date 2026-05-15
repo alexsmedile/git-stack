@@ -5,7 +5,7 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet)
 ![Codex](https://img.shields.io/badge/Codex-compatible-orange)
-![Version](https://img.shields.io/badge/version-1.5.0-green)
+![Version](https://img.shields.io/badge/version-1.5.1-green)
 
 ## What's Inside
 
@@ -43,13 +43,15 @@ claude --plugin-dir ./
 ### Codex — install from GitHub
 
 ```bash
-codex plugin install https://github.com/alexsmedile/git-stack
+codex plugin marketplace add alexsmedile/git-stack
+# then: codex /plugins → browse and install
 ```
 
 ### Codex — install from local clone
 
 ```bash
-codex plugin install ./git-stack
+codex plugin marketplace add ./git-stack
+# then: codex /plugins → browse and install
 ```
 
 ### Vercel skills — install via npx
@@ -82,6 +84,8 @@ Transforms a bare README into a high-converting project page. Works interactivel
 4. Write `README2.md` for review, then replace on confirmation
 
 ## Commands
+
+These slash commands are packaged at the plugin root for runtimes that support plugin commands. In Codex, the primary supported surface is the installed skills (`/git-stack:git-guard` and `/git-stack:repo-prettifier`); use the skill prompts if a command does not appear in the command picker.
 
 ### `/commit`
 
@@ -142,6 +146,7 @@ To update after pushing changes:
 
 ```
 /plugin marketplace update git-stack
+codex plugin marketplace upgrade git-stack
 ```
 
 ## License

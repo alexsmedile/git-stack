@@ -7,8 +7,8 @@
     {
       "name": "git-stack",
       "source": {
-        "source": "local",
-        "path": "./"
+        "source": "url",
+        "url": "https://github.com/alexsmedile/git-stack.git"
       },
       "policy": {
         "installation": "AVAILABLE",

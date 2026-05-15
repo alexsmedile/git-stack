@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.5.1] — 2026-05-16
+
+### Fixed
+- `.agents/plugins/marketplace.json` — plugin `source` changed from `local`/`./` to `url` pointing at the GitHub remote. The local source was not resolvable from Codex's remote marketplace, which blocked plugin installation.
+
+### Changed
+- `.codex-plugin/plugin.json` — Codex category from `Coding` to `Productivity`, consistent with the other plugins.
+- `README.md` — corrected Codex install flow: `codex plugin marketplace add` + `codex /plugins` instead of the nonexistent `codex plugin install`; added a note that in Codex the primary surface is the skills `/git-stack:git-guard` and `/git-stack:repo-prettifier`.
+
+---
+
 ## [1.5.0] — 2026-05-12
 
 ### Added
