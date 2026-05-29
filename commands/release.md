@@ -1,28 +1,35 @@
 ---
-description: Tag a release version, update CHANGELOG.md, and push the tag to remote. Runs /update-docs first if CHANGELOG needs updating.
-version: 1.2.0
-allowed-tools: Bash, Read, Edit, Write
-argument-hint: "[version]"
+description: Tag a release version, update CHANGELOG.md (promoting [Unreleased]), bump manifests, and push the tag. Asks only when something is truly off.
+version: 1.3.0
+allowed-tools: Bash, Read, Edit, Write, AskUserQuestion
+argument-hint: "[version] (e.g. 1.2.0 — omit to infer)"
 ---
 
 # /release — Tag a Release
 
-Create a git tag for a release version, update CHANGELOG.md, and push the tag.
+Create a git tag for a release version, update CHANGELOG.md, bump manifests, and push the tag.
+
+## Operating principle — releasing is the consent
+
+The user typed `/release`. That **is** the instruction to cut a release — proceed.
+
+- **Version known + clean state → run end to end**, no confirm gate. Show the DONE box after.
+- **Stop ONLY when something is truly off:** uncommitted changes, not on `main`, manifest mismatch that won't auto-fix, or (no arg) the bump level is ambiguous.
+- When you must stop, surface it through the **`AskUserQuestion` interactive modal** (keep confirmations in the modal, never inline text).
+- Recap / blocker / done go in a **left-border box**: top/bottom rule + left `│` only, no right border, no corners.
+
+Unlike `/changelog` and `/update-docs`, a release **needs a version** — there's no `[Unreleased]` outcome here. If no version is given, infer one; ask only if the level is ambiguous.
 
 ---
 
 ## Step 1 — Determine version
 
-If `$ARGUMENTS` is provided, use it as the version (strip leading `v` for changelog entry, keep for tag).
+If `$ARGUMENTS` is provided, use it (strip leading `v` for the changelog entry, keep for the tag).
 
 If no argument:
-- Run `git tag --sort=-version:refname | head -5` to see recent tags
-- Run `git log --oneline -10` to review recent commits
-- Infer the next version based on changes since last tag:
-  - Breaking changes → bump **major**
-  - New features / commands → bump **minor**
-  - Fixes / docs only → bump **patch**
-- Show the inferred version and ask: **"Tag as vX.Y.Z? (yes / edit)"**
+- `git tag --sort=-version:refname | head -5` and `git log --oneline -10`.
+- Infer the next version from changes since last tag: Breaking → major · new features/commands → minor · fixes/docs → patch.
+- **Unambiguous → use it and proceed.** **Ambiguous** (changes don't point to one level) → blocker. Modal: **Patch X.Y.Z** / **Minor X.Y.0** / **Major X.0.0** (computed).
 
 ---
 
@@ -33,8 +40,9 @@ git status -sb
 git branch --show-current
 ```
 
-- If there are uncommitted changes: warn and ask **"You have uncommitted changes — commit first or proceed anyway? (commit first / proceed / abort)"**
-- If not on `main` or the designated release branch: warn **"You are on branch <name>, not main — tag here anyway? (yes / abort)"**
+- **Uncommitted changes** → blocker. Modal: **Commit first** / **Proceed anyway** / **Abort**.
+- **Not on `main`** (or the designated release branch) → blocker. Modal: **Tag here anyway** / **Abort**. A non-default branch is outside the simple release path.
+- **Clean + on `main`** → proceed silently.
 
 ---
 
@@ -47,7 +55,7 @@ git branch --show-current
 bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION" --dry-run
 ```
 
-Show the planned writes. If exit 2 (no manifests detected), note "no project-level manifests — only CHANGELOG/tag will change" and skip 2.5b/2.5c. If any planned write would change a file, ask: **"Bump these N file(s) to vX.Y.Z? (yes / abort)"**
+Show the planned writes. If exit 2 (no manifests detected), note "no project-level manifests — only CHANGELOG/tag will change" and skip 2.5b/2.5c. Otherwise proceed to the bump — invoking `/release` is consent to bump manifests to the target.
 
 ### 2.5b. Execute bump
 ```bash
@@ -65,15 +73,9 @@ bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifest
 Verify every reported version equals `$VERSION`:
 
 - **All entries == `$VERSION`** → ✓ continue.
-- **Some entry ≠ `$VERSION`** (e.g. CHANGELOG top entry will be written in step 3, or a manifest the bumper doesn't know about) → list the offenders and ask:
-  ```
-  ⚠ Post-write audit: <N> location(s) still at <old-version>:
-      <list>
-  Auto-fix by re-running bump-manifests.sh? (yes / continue anyway / abort)
-  ```
-  - `yes`: re-run bumper, then re-audit. If still drifting, abort.
-  - `continue anyway`: warn the release will ship with the listed mismatches and continue.
-  - `abort`: stop.
+- **Some entry ≠ `$VERSION`** (CHANGELOG top entry gets written in Step 3, or a manifest the bumper doesn't know about) → **auto-fix**: re-run `bump-manifests.sh "$VERSION"`, then re-audit once.
+  - Now aligned → continue.
+  - Still drifting → blocker. Show offenders in a box, then modal: **Ship with mismatch** / **Abort**.
 - **Exit 2 (nothing found)**: continue.
 
 Component-level versions (per-skill / per-command frontmatter) are shown for visibility only — they evolve independently and never block.
@@ -86,15 +88,17 @@ Component-level versions (per-skill / per-command frontmatter) are shown for vis
 cat CHANGELOG.md 2>/dev/null | head -10 || echo "NO_CHANGELOG"
 ```
 
-Check if the top entry already matches the target version:
-- **Already has this version**: show it and ask **"CHANGELOG already has [vX.Y.Z] — looks good? (yes / edit / skip)"**
-- **Missing or outdated**: collect commits since last tag:
+Resolve the entry for `$VERSION` (consent already given — write it, no per-entry confirm):
+
+- **`[Unreleased]` section exists** → **promote it**: rename `## [Unreleased]` → `## [X.Y.Z] — YYYY-MM-DD`, and leave a fresh empty `[Unreleased]` above. This is the common path — the work was logged unreleased and is now being cut.
+- **Top entry already `[X.Y.Z]`** → leave it as-is, continue.
+- **Neither** → collect commits since last tag and draft a dated entry:
   ```bash
   git log $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --oneline
   ```
-  Draft a changelog entry using Keep a Changelog format, then ask: **"Add this entry to CHANGELOG.md? (yes / edit / skip)"**
+  Insert it at the top (below the header, above existing entries), today's date.
 
-If writing a new entry, insert it at the top (below the header, above existing entries). Use today's date.
+Stop here only if the diff can't be classified confidently → `AskUserQuestion` with candidate buckets.
 
 ---
 
@@ -122,16 +126,26 @@ Report: tag name, commit it points to, remote URL.
 
 ## Step 6 — Report
 
-```
-RELEASED
-────────
-Tag:    vX.Y.Z
-Commit: <hash>
-Remote: https://github.com/user/repo
+Left-border box. Left `│` only, no right border.
 
-Next steps:
-  gh release create vX.Y.Z --generate-notes   # optional GitHub release
-  /plugin marketplace update <plugin-name>     # if this is a Claude Code plugin
+```
+┌─ RELEASED · v1.2.0
+│ VERSION    1.2.0  (minor — new capability, backward-compatible)
+│ COMPONENTS cli/spectacular 1.1.3 → 1.2.0 ✓  ·  SKILL.md 1.1.4 → 1.2.0 ✓
+│ MANIFESTS  .claude-plugin/plugin.json       1.1.4 → 1.2.0
+│            .claude-plugin/marketplace.json  1.1.4 → 1.2.0  (.metadata + .plugins[])
+│            .codex-plugin/plugin.json         1.1.4 → 1.2.0
+│            README.md badge                   1.1.4 → 1.2.0
+│ CHANGELOG  [1.2.0] (promoted from [Unreleased])
+│ COMMIT     abc1234  chore: release v1.2.0
+│ TAG        v1.2.0 → origin
+│ PRE-FLIGHT [CLEAN] clean tree · [CLEAN] manifests aligned · [INFO] on main
+│ REMOTE     https://github.com/user/repo
+│ NEXT       gh release create v1.2.0 --generate-notes
+│            /plugin marketplace update <plugin-name>   (if a CC plugin)
+└─
 ```
 
-All version-bearing manifests were bumped in Step 2.5. If the user added new manifest files outside the bumper's detection (rare), they will need to align those manually.
+Collapse MANIFESTS to a count (`6 bumped → 1.2.0`) only when there are more than ~6.
+
+All version-bearing manifests were bumped in Step 2.5. Manifest files added outside the bumper's detection (rare) need manual alignment.

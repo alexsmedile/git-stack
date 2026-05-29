@@ -5,6 +5,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.6.0] — 2026-05-29
+
+### Changed
+- **All slash commands reworked around one model: invocation = consent.** They run end-to-end when the change is simple and the session is clean, and stop only when something is truly off. Clarifications now use the `AskUserQuestion` interactive modal instead of inline `(yes / edit / abort)` text prompts. Instructions are phrased in positive form.
+- **Reports are now left-border ASCII boxes** (`┌─` / `│` / `└─`, no right border) so they never misalign, with clearly labelled sections.
+- **Blocker model unified** across `/commit`, `/push`, `/wrap-up`, `/release`: stop on personal/secret files, stale/outdated folders staged, errors, missing files, non-`main` branch, diverged remote, version/manifest mismatch, or genuine ambiguity. A simple, verified, non-breaking change on `main` runs without questions.
+- `/commit` → v2.1.0: added the "simplicity test"; committing to `main` for a simple change is normal (reported as a plain branch field). DONE box now shows a `[CLEAN]`/`[INFO]` pre-flight checklist.
+- `/push` → v2.2.0: same model; diverged remote / no remote are HIGH blockers; DONE box includes the pre-flight checklist.
+- `/wrap-up` → v2.1.0: reframed as **close-the-session** (commit + push always) with **tagging as an opt-in release decision** — asked via modal when no version is given, run automatically when a version is. Restructured as a pipeline (`/commit` + `/push`, then `/update-docs` + bump + tag on release). Final report is a full recap: VERSION (+ reason), NEW / EDITED files, COMPONENTS + MANIFESTS bumps, CHANGELOG, COMMIT / TAG / PUSH, PRE-FLIGHT checklist, NOTES.
+- `/update-docs` → v1.2.0: supports `[Unreleased]` (default) and versioned `[X.Y.Z]` entries with promotion on release; new internal-vs-external **scope clarification** (internal = CLAUDE/AGENTS/GEMINI/specs; external = README/public docs) asked via modal.
+- `/changelog` → v1.1.0: `[Unreleased]`-aware with promotion; positive-consent flow; left-border box.
+- `/release` → v1.3.0: modal gates replace inline prompts; promotes `[Unreleased]` → `[X.Y.Z]`; manifest drift auto-fixes before blocking; full recap box with COMPONENTS/MANIFESTS/PRE-FLIGHT sections.
+
+---
+
 ## [1.5.1] — 2026-05-16
 
 ### Fixed

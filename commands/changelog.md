@@ -1,13 +1,22 @@
 ---
-description: Draft and write a CHANGELOG.md entry for changes since the last tag. Confirms before writing. No README patches, no commit, no push.
-version: 1.0.0
-allowed-tools: Bash, Read, Edit, Write
-argument-hint: "[version] (e.g. 1.2.0 — omit to auto-detect)"
+description: Draft and write a CHANGELOG.md entry for changes since the last tag — to [Unreleased] by default, or a versioned entry when a version is given. No README patches, no commit, no push.
+version: 1.1.0
+allowed-tools: Bash, Read, Edit, Write, AskUserQuestion
+argument-hint: "[version] (e.g. 1.2.0 — omit for [Unreleased])"
 ---
 
 # /changelog — Write Changelog Entry
 
-Draft a Keep a Changelog entry for changes since the last tag. Confirm, then write. Nothing else.
+Draft a Keep a Changelog entry for changes since the last tag, then write it. Changelog only — no docs, no commit, no push.
+
+## Operating principle — don't re-ask for consent
+
+The user typed `/changelog`. That **is** the instruction to write the entry — treat it as consent already given and proceed.
+
+- **Changes classify cleanly → draft and write.** No confirm gate. Show the DONE box after.
+- **Stop ONLY when the diff is impossible to classify confidently** — then ask via the `AskUserQuestion` modal (keep confirmations in the modal, never inline text).
+- A missing version is **not** a blocker — it means write to `## [Unreleased]`.
+- Recap / done go in a **left-border box**: top/bottom rule + left `│` only, no right border, no corners.
 
 ---
 
@@ -50,22 +59,23 @@ Skip empty buckets.
 
 ---
 
-## Step 3 — Determine version
+## Step 3 — Heading: `[Unreleased]` or `[X.Y.Z]`
 
-If `$ARGUMENTS` provided, use it (strip leading `v`).
-Else infer from highest-severity bucket:
-- Breaking → **major** bump
-- Added → **minor** bump
-- Fixed or Changed → **patch** bump
+- **`$ARGUMENTS` carries a version** → released entry `## [X.Y.Z] — YYYY-MM-DD` (strip a leading `v`).
+- **No version** → write/extend `## [Unreleased]` (no date). This is the default.
+
+Inferred bump *level* (only to suggest a version when releasing later): Breaking → major · Added → minor · Fixed/Changed → patch.
+
+**Promotion:** if `## [Unreleased]` exists and a version is now given, rename it `## [X.Y.Z] — YYYY-MM-DD`, merge new items in, and leave a fresh empty `[Unreleased]` above.
 
 ---
 
-## Step 4 — Draft entry
+## Step 4 — Draft + write entry
 
-Format per [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Use today's date.
+Format per [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Heading per Step 3.
 
 ```markdown
-## [X.Y.Z] — YYYY-MM-DD
+## [Unreleased]          ← or  ## [X.Y.Z] — YYYY-MM-DD
 
 ### Breaking
 - ...
@@ -85,17 +95,9 @@ Format per [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Use today's
 
 One line per item. Focus on what the user needs to know, not implementation detail. Skip empty sections.
 
-Show the draft to the user and ask: **"Write this entry? (yes / edit / abort)"**
+Write straight away — consent was given by invoking `/changelog`. Stop only if the diff can't be classified confidently; then ask via `AskUserQuestion` with the candidate buckets.
 
-- **abort** → stop, write nothing
-- **edit** → show draft, let user adjust inline, then confirm once more
-- **yes** → write (Step 5)
-
----
-
-## Step 5 — Write
-
-If CHANGELOG.md does not exist, create it with a standard header:
+If CHANGELOG.md does not exist, create it with a standard header first:
 
 ```markdown
 # Changelog
@@ -106,16 +108,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ---
 ```
 
-Insert the new entry at the top, below the header, above any existing entries.
+Then:
+- **`[Unreleased]`** → merge new items into the existing section's buckets, or create it at the top below the header.
+- **`[X.Y.Z]`** → insert the dated entry at the top below the header (promoting `[Unreleased]` if present).
 
 ---
 
-## Step 6 — Report
+## Step 5 — Report
+
+Left-border box. Left `│` only, no right border.
 
 ```
-DONE
-────
-CHANGELOG.md  updated  (v1.2.0 entry, 3 items)
+┌─ CHANGELOG UPDATED · [Unreleased]
+│ entry   [Unreleased] — 3 items (1 added, 2 fixed)
+│ next    release later with /wrap-up <version>
+└─
+```
+
+Released variant:
+```
+┌─ CHANGELOG UPDATED · v1.2.0
+│ entry   [1.2.0] — 3 items
+│ next    git tag v1.2.0 && /push
+└─
 ```
 
 Do not commit, tag, or push.
