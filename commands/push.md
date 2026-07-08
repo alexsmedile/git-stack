@@ -11,6 +11,21 @@ Thin orchestrator. Sequence and confirmation flow. Details in `skills/git-ops/re
 
 Goal: pre-flight → commit → push.
 
+## Delegate the mechanical work (default)
+
+To keep the noisy `git status`/`diff`/scan output and the git writes off your
+context, delegate to the **`git-stack-runner`** subagent (Sonnet) via the Task
+tool. Pass: `operation: push`, the absolute repo path, the commit message (if
+given), and any allowed non-noreply emails. It runs the full sequence below
+headlessly and returns a one-line verdict:
+- **`VERDICT: DONE`** → relay the PUSHED/COMMIT/PREFLIGHT lines to the user in the DONE box. Finished.
+- **`VERDICT: BLOCKED`** → the agent stopped without writing. Take its BLOCKERS list and run the `AskUserQuestion` modal yourself (the agent can't ask the user), then act on the choice.
+- **`VERDICT: NOTHING-TO-DO`** → report clean, nothing to push.
+
+Run the steps below inline only if the agent is unavailable or the user asks to
+see each check. Blocker decisions ALWAYS stay with you — the agent never
+resolves a HIGH blocker.
+
 ## Operating Principles
 - **Consent**: The slash command is implicit consent; auto-run without confirming if clean/valid.
 - **Blockers**: Stop and ask only for high-severity issues (see Blocker list) using `AskUserQuestion` modal.

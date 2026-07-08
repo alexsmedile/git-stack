@@ -20,6 +20,8 @@ git-stack/
 │   │       └── decisions.md # When to use what — situational decision guide
 │   └── repo-prettifier/      # README improvement skill (interactive, 4-phase)
 │       └── SKILL.md
+├── agents/
+│   └── git-stack-runner.md # Sonnet subagent: runs commit/push checks headlessly, returns a verdict
 └── commands/
     ├── commit.md           # /commit — safe local commit with pre-flight checks
     ├── push.md             # /push — safe commit + push with pre-flight checks
@@ -29,6 +31,26 @@ git-stack/
 ```
 
 `_archive/` contains superseded versions — do not modify or reference them.
+
+## Agents
+
+**`git-stack-runner`** (`agents/git-stack-runner.md`, model `sonnet`) runs the
+mechanical `commit`/`push` pre-flight sequence headlessly and does the git writes
+when the tree is clean, returning a one-line verdict. Purpose: keep the noisy
+`git status`/`diff`/scan output and the write ops off the main orchestrator's
+context, on a cheaper model.
+
+Division of labour: the agent does all **read-only checks + clean-path writes**;
+the **orchestrator owns every blocker decision** (the `AskUserQuestion` modal) —
+a plugin agent runs autonomously and cannot ask the user. On a HIGH blocker,
+non-`main` branch, or diverged remote, the agent stops without writing and
+returns a `BLOCKED` verdict for the orchestrator to resolve. `/commit` and
+`/push` delegate here by default (see their "Delegate the mechanical work"
+sections); run inline only when the agent is unavailable or the user wants to
+watch each check.
+
+Not supported in plugin agents: `hooks`, `mcpServers`, `permissionMode`. Both
+Claude Code and Codex auto-discover `agents/` at the plugin root.
 
 ## Skill Architecture
 

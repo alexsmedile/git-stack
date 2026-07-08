@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.7.2] — 2026-07-08
+
+### Added
+- **`git-stack-runner` subagent** (`agents/git-stack-runner.md`, model `sonnet`): runs the mechanical `commit`/`push` pre-flight sequence headlessly and executes the git writes when clean, returning a one-line verdict. Keeps noisy `git status`/`diff`/scan output and write ops off the main orchestrator's context, on a cheaper model. Owns read-only checks + clean-path writes only — every blocker decision (the `AskUserQuestion` modal) stays with the orchestrator, since a plugin agent can't ask the user.
+
+### Changed
+- `/commit` and `/push` now delegate to `git-stack-runner` by default (new "Delegate the mechanical work" section), falling back to the inline sequence when the agent is unavailable or the user wants to watch each check.
+- Documented the new `agents/` directory and delegation model in AGENTS.md (structure tree + Agents section).
+
+---
+
 ## [1.7.1] — 2026-07-08
 
 ### Added
