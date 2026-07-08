@@ -26,6 +26,21 @@ Prefer GitHub's **noreply** address over a real email — keeps the personal add
 
 Never guess or construct the address — the ID is account-specific and only GitHub shows it.
 
+### Author-email leak check
+Run BEFORE every commit and every push — this is a helper script, not a manual grep:
+```bash
+bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh" --staged   # before committing (checks configured user.email)
+bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh"            # before pushing (checks HEAD author + committer)
+```
+It flags three leak types and exits `1` on any (WARNING severity — surface it, let the user decide):
+- **personal-email** — any address that isn't a `@users.noreply.github.com` alias (real email leaking into public history).
+- **machine-hostname** (`name@Host.local`) — Git's auto-default when no email is set; unverifiable, so those commits stay **unlinked** on GitHub.
+- **github-web-signature** (`noreply@github.com`) — commits made via the GitHub web UI: the *author* is usually your noreply (fine) but the *committer* reads as "GitHub". Checking author **and** committer is the point — a `%ae`-only grep misses this.
+
+Why a script and not a manual check: during a mailmap migration the author can end up correct while the committer still leaks, and stale side-branch refs keep old emails after `main` is fixed. The script checks both fields and can scan a range (`--range origin/main..HEAD`) or all refs (`--all`). Allow a deliberate non-noreply email with `git config --add gitstack.allowedEmail you@example.com`.
+
+**Attribution rule**: the commit author must be the user's GitHub noreply alias so GitHub links the work to their profile. If the check warns, fix going forward with `git config --global user.email` (see setup flow above); fix history with `git filter-repo --mailmap` (rewrites author **and** committer, preserves dates and content, requires force-push).
+
 ### Secrets / API key scan
 Run BEFORE every commit on ADDED lines only:
 ```bash

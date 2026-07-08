@@ -70,6 +70,11 @@ Run checks below. Collect ALL findings first, then report together. Refer to `gi
   git branch --show-current
   ```
   Block if not `main`/`master` (clarify intent). If simple on `main`, proceed silently.
+- **2h. Author-email leak** (WARNING, not blocking):
+  ```bash
+  bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh" --staged
+  ```
+  Checks the configured `user.email` you're about to commit as. Exit `1` = a leak (personal email, `name@Host.local` machine default, or `noreply@github.com`). Surface it in the DONE box and offer the fix (`git config --global user.email "ID+username@users.noreply.github.com"` — see `core.md` → "Commit identity"), but do not hard-block a simple commit. See `core.md` → "Author-email leak check".
 
 ---
 

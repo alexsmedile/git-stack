@@ -38,8 +38,14 @@ If clean working tree and nothing staged → skip to Step 6 (push only).
 ---
 
 ## Step 2 — Pre-flight checks
-Run all checks from `/commit` Step 2, plus:
-- **2h. Manifest alignment**: Run `${CLAUDE_SKILL_DIR}/scripts/check-manifests.sh` from repo root. Severity: WARNING (informational for `/push`; blocking for `/release` and `/wrap-up`).
+Run all checks from `/commit` Step 2 (including `2h` author-email on the staged identity), plus:
+- **2i. Author-email leak on outgoing commits** (WARNING): check the actual commits about to be pushed, not just config — this catches a leaking *committer* field and old emails that a rewrite/rebase left behind.
+  ```bash
+  bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh" --range "@{upstream}..HEAD" 2>/dev/null \
+    || bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh"
+  ```
+  Exit `1` = a leak in an outgoing commit's author or committer. Surface it and offer the fix; don't hard-block. See `core.md` → "Author-email leak check".
+- **2j. Manifest alignment**: Run `${CLAUDE_SKILL_DIR}/scripts/check-manifests.sh` from repo root. Severity: WARNING (informational for `/push`; blocking for `/release` and `/wrap-up`).
 
 ---
 
