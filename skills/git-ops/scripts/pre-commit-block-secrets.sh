@@ -5,7 +5,7 @@
 # Scans the STAGED diff (what will actually be committed) for patterns matching
 # common API keys, tokens, and private keys. Blocks the commit if any match.
 #
-# Patterns mirror git-guard/references/core.md → "Secrets / API key scan".
+# Patterns mirror git-ops/references/core.md → "Secrets / API key scan".
 # Keep this script and core.md in sync when adding new patterns.
 #
 # Exit codes:
@@ -45,7 +45,7 @@ fi
   echo "  1. Remove the secret manually, then re-stage and commit."
   echo "  2. Move the value to a gitignored file and reference it via env var."
   echo "  3. If this file always contains secrets (e.g., a config backup),"
-  echo "     install a git clean filter — see git-guard/references/decisions.md"
+  echo "     install a git clean filter — see git-ops/references/decisions.md"
   echo "     → 'I want to back up a config file that always contains secrets'."
   echo
   echo "To bypass this hook for a single commit (NOT recommended), use:"

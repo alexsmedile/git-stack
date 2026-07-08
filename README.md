@@ -5,13 +5,13 @@ Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, s
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet)
 ![Codex](https://img.shields.io/badge/Codex-compatible-orange)
-![Version](https://img.shields.io/badge/version-1.6.0-green)
+![Version](https://img.shields.io/badge/version-1.7.0-green)
 
 ## What's Inside
 
 | Component | Invoked as | What it does |
 |-----------|-----------|-------------|
-| `git-guard` | `/git-stack:git-guard` | Orchestration layer for all Git/GitHub work — decision guide, atomic ops, multi-step workflows |
+| `git-ops` | `/git-stack:git-ops` | Orchestration layer for all Git/GitHub work — decision guide, atomic ops, multi-step workflows |
 | `repo-prettifier` | `/git-stack:repo-prettifier` | Interactive README upgrade — positions, designs, and writes a high-converting README |
 | `/commit` | `/commit` | Safe local commit with pre-flight checks (secrets, paths, large files, `.gitignore`) |
 | `/push` | `/push` | Safe commit + push with remote state checks and branch safety warnings |
@@ -61,7 +61,7 @@ npx codex-marketplace add ./git-stack --plugin   # Codex
 
 ## Skills
 
-### `git-guard`
+### `git-ops`
 
 The orchestration layer. Covers:
 
@@ -84,13 +84,13 @@ Transforms a bare README into a high-converting project page. Works interactivel
 
 ## Commands
 
-These slash commands are packaged at the plugin root for runtimes that support plugin commands. In Codex, the primary supported surface is the installed skills (`/git-stack:git-guard` and `/git-stack:repo-prettifier`); use the skill prompts if a command does not appear in the command picker.
+These slash commands are packaged at the plugin root for runtimes that support plugin commands. In Codex, the primary supported surface is the installed skills (`/git-stack:git-ops` and `/git-stack:repo-prettifier`); use the skill prompts if a command does not appear in the command picker.
 
 ### `/commit`
 
-Safe local commit. Thin orchestrator that runs the canonical preflight from `git-guard`:
+Safe local commit. Thin orchestrator that runs the canonical preflight from `git-ops`:
 
-- Secrets scan (canonical patterns from `git-guard/references/core.md` → OpenAI, Anthropic, GitHub, AWS, Google, Slack, Hugging Face, PEM blocks, etc.)
+- Secrets scan (canonical patterns from `git-ops/references/core.md` → OpenAI, Anthropic, GitHub, AWS, Google, Slack, Hugging Face, PEM blocks, etc.)
 - `.env` detection
 - Hardcoded absolute path detection
 - Large file check (>500KB staged, >1MB in repo)
@@ -108,7 +108,7 @@ Everything `/commit` does, plus:
 - Diverged history warning
 - Upstream branch detection
 - Push with `--set-upstream` when needed
-- Force-push guardrail — `--force-with-lease` only, never to shared branches (per git-guard rule #4)
+- Force-push guardrail — `--force-with-lease` only, never to shared branches (per git-ops rule #4)
 
 ### `/changelog`
 

@@ -1,6 +1,6 @@
 {
   "name": "git-stack",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
   "skills": "./skills/",
   "hooks": "./hooks/hooks-codex.json",

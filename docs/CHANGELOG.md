@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.7.0] — 2026-07-08
+
+### Breaking
+- **Renamed skill** from `git-guard` to `git-ops` across all references, scripts, folder names, and command execution contexts.
+
+### Added
+- **Repository hygiene skill**: Added `skills/git-ops/references/cleanup.md` to support repo-wide cleanup, dead branch pruning, and large-blob purges.
+
+### Changed
+- **Token Efficiency Optimization**: Optimized all slash commands (`commit`, `push`, `wrap-up`, `update-docs`) and references (`core.md`) to drastically reduce token bloat. Streamlined duplicated rules, operating principles, blocker lists, and instructions. Kept 100% of the functional logic and commands while reducing overall instruction context sizes by **~63%** (from 53.4 KB to 19.9 KB).
+- Updated documentation and helper scripts to reflect the `git-ops` renaming.
+
+---
+
 ## [1.6.0] — 2026-05-29
 
 ### Changed

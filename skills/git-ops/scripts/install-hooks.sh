@@ -13,7 +13,7 @@ set -uo pipefail
 TARGET="${1:-.}"
 TARGET=$(cd "$TARGET" 2>/dev/null && pwd) || { echo "Not a directory: $1"; exit 2; }
 
-# Resolve hook source — prefer CLAUDE_SKILL_DIR (set when git-guard skill is active),
+# Resolve hook source — prefer CLAUDE_SKILL_DIR (set when git-ops skill is active),
 # fall back to this script's own dir.
 if [ -n "${CLAUDE_SKILL_DIR:-}" ] && [ -f "$CLAUDE_SKILL_DIR/scripts/pre-commit-block-secrets.sh" ]; then
   HOOK_SRC="$CLAUDE_SKILL_DIR/scripts/pre-commit-block-secrets.sh"
@@ -51,7 +51,7 @@ else
 fi
 
 echo
-bold "── git-guard: pre-commit secret-block hook installer (preview only)"; echo
+bold "── git-ops: pre-commit secret-block hook installer (preview only)"; echo
 echo
 echo "  Target repo:   $TARGET"
 echo "  Hook source:   $HOOK_SRC"
@@ -61,7 +61,7 @@ echo
 # Source readable?
 if [ ! -r "$HOOK_SRC" ]; then
   yel "  ⚠ Hook source not found at the path above."; echo
-  echo "    Make sure the git-guard skill is installed, or pass --skill-dir explicitly."
+  echo "    Make sure the git-ops skill is installed, or pass --skill-dir explicitly."
   exit 1
 fi
 
@@ -80,7 +80,7 @@ echo "  $(bold "To install (copy approach — survives upgrades, snapshot in rep
 echo "    cp '$HOOK_SRC' '$HOOK_DEST'"
 echo "    chmod +x '$HOOK_DEST'"
 echo
-echo "  $(bold "To install (symlink approach — auto-updates when git-guard updates):")"
+echo "  $(bold "To install (symlink approach — auto-updates when git-ops updates):")"
 echo "    ln -sf '$HOOK_SRC' '$HOOK_DEST'"
 echo
 echo "  $(dim "Note: .git/hooks/ is NOT versioned by git. Other clones will not")"

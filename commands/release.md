@@ -52,14 +52,14 @@ git branch --show-current
 
 ### 2.5a. Dry-run preview
 ```bash
-bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION" --dry-run
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-ops}/scripts/bump-manifests.sh" "$VERSION" --dry-run
 ```
 
 Show the planned writes. If exit 2 (no manifests detected), note "no project-level manifests — only CHANGELOG/tag will change" and skip 2.5b/2.5c. Otherwise proceed to the bump — invoking `/release` is consent to bump manifests to the target.
 
 ### 2.5b. Execute bump
 ```bash
-bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests.sh" "$VERSION"
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-ops}/scripts/bump-manifests.sh" "$VERSION"
 ```
 
 - **Exit 0**: continue.
@@ -67,7 +67,7 @@ bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/bump-manifests
 
 ### 2.5c. Post-write audit (the real gate)
 ```bash
-bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-guard}/scripts/check-manifests.sh"
+bash "${CLAUDE_SKILL_DIR:-$HOME/.claude/skills/git-ops}/scripts/check-manifests.sh"
 ```
 
 Verify every reported version equals `$VERSION`:

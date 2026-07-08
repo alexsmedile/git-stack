@@ -1,18 +1,19 @@
 ---
-name: git-guard
-version: 1.4.0
+name: git-ops
+version: 1.5.0
 description: >
   Git and GitHub orchestration with safe defaults — use this for branching,
   committing, opening PRs, rebasing, resolving conflicts, tagging releases,
-  setting up repos, or deciding the right workflow strategy. Trigger whenever
-  the user mentions push, pull, PR, branch, merge, rebase, commit, tag,
-  release, GitHub Actions, or asks "how should I structure this repo" /
+  setting up repos, cleaning up a repo, or deciding the right workflow strategy.
+  Trigger whenever the user mentions push, pull, PR, branch, merge, rebase,
+  commit, tag, release, GitHub Actions, repo cleanup / pruning branches /
+  reclaiming space, or asks "how should I structure this repo" /
   "what's the right workflow here" / "help me manage this". Always use
-  git-guard for git/GitHub work — it enforces safety rules Claude skips by default.
+  git-ops for git/GitHub work — it enforces safety rules Claude skips by default.
 compatibility: Requires `git` and `gh` CLI. Verify with `gh auth status`.
 ---
 
-# git-guard
+# git-ops
 
 Read only the reference file(s) needed for the current task.
 
@@ -22,6 +23,7 @@ Read only the reference file(s) needed for the current task.
 | `github` | PR, review, issues, repo setup, releases, CI | `references/github.md` | anything touching GitHub |
 | `workflows` | feature, bugfix, refactor, release, hotfix sequences | `references/workflows.md` | multi-step task |
 | `decisions` | when to use what, risk table, situation → action map | `references/decisions.md` | user needs guidance on approach |
+| `cleanup` | repo hygiene, dead/stale/unsynced branches, gc, big-blob purge | `references/cleanup.md` | cleaning up a repo or reclaiming space |
 
 ## Safety rules
 

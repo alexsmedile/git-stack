@@ -11,7 +11,7 @@ This file provides guidance to AI agents (Claude Code, Codex, Gemini) when worki
 ```
 git-stack/
 ├── skills/
-│   ├── git-guard/          # Main orchestration skill (load references on demand)
+│   ├── git-ops/          # Main orchestration skill (load references on demand)
 │   │   ├── SKILL.md        # Entry point — domain map and safety rules
 │   │   └── references/     # Load only what's needed for the task
 │   │       ├── core.md     # Atomic Git ops: commit, branch, merge, rebase, stash, worktree
@@ -32,7 +32,7 @@ git-stack/
 
 ## Skill Architecture
 
-**git-guard** is the master orchestration skill. It separates:
+**git-ops** is the master orchestration skill. It separates:
 - **Atomic skills** (`git-stack.core.*`) — one operation, one responsibility
 - **Workflows** (`git-stack.workflow.*`) — sequenced multi-step operations
 
@@ -40,7 +40,7 @@ Reference files are loaded on demand — only read the one(s) relevant to the cu
 
 **repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
 
-**commands/** are slash commands (not skills). `commit.md` and `push.md` are **thin orchestrators** — they own the sequence and confirmation flow, while `git-guard/references/core.md` owns the canonical pattern definitions and severity rules (secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, branch safety warning). Update patterns in core.md once, both commands inherit. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
+**commands/** are slash commands (not skills). `commit.md` and `push.md` are **thin orchestrators** — they own the sequence and confirmation flow, while `git-ops/references/core.md` owns the canonical pattern definitions and severity rules (secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, branch safety warning). Update patterns in core.md once, both commands inherit. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
 
 ## Key Safety Rules (apply to all skills in this bundle)
 
@@ -55,11 +55,11 @@ Reference files are loaded on demand — only read the one(s) relevant to the cu
 Skills are installed via `apm`:
 
 ```bash
-# Install git-guard globally
-apm --mode skills install git-guard
+# Install git-ops globally
+apm --mode skills install git-ops
 
 # Install project-scoped
-apm --mode skills --project-dir /path/to/project install git-guard
+apm --mode skills --project-dir /path/to/project install git-ops
 ```
 
 Commands (`commit.md`, `push.md`, `changelog.md`, `update-docs.md`, `wrap-up.md`) are slash commands invoked directly in Claude Code — they do not go through `apm`.
