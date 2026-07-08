@@ -11,6 +11,21 @@ Logical units only. One commit = one clear story.
 - **Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
 - **Guardrails**: No secrets, `.env`, `node_modules/`, build output, or staged files >500KB.
 
+### Commit identity (email)
+Prefer GitHub's **noreply** address over a real email — keeps the personal address out of public history while still linking commits to the profile.
+- **Format**: `ID+username@users.noreply.github.com` (accounts created after 2017-07-18). Plain `username@users.noreply.github.com` only links for pre-2017 accounts that enabled email privacy back then — do not assume it.
+
+**First check** — if `git config user.email` already returns a `@users.noreply.github.com` address, it's set; use it as-is and skip setup. Only run the setup flow when the configured email is a real/personal address or unset.
+
+**Setup flow (walk the user through this):**
+1. Ask the user to open **https://github.com/settings/emails**.
+2. Have them tick **"Keep my email addresses private"**. GitHub then shows their noreply address (`ID+username@users.noreply.github.com`) right under that checkbox.
+3. Ask them to paste that exact address back.
+4. Set it: `git config --global user.email "<pasted-address>"` (per-repo: drop `--global`). If a repo has a local override with a real email, `git config --unset user.email` so it inherits global.
+5. Confirm: `git config user.email`.
+
+Never guess or construct the address — the ID is account-specific and only GitHub shows it.
+
 ### Secrets / API key scan
 Run BEFORE every commit on ADDED lines only:
 ```bash

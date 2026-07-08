@@ -19,7 +19,7 @@ Read only the reference file(s) needed for the current task.
 
 | Domain | Covers | Reference | Load when… |
 |--------|--------|-----------|------------|
-| `core` | commit, branch, merge, rebase, stash, worktree | `references/core.md` | atomic git op needed |
+| `core` | commit, commit identity (noreply email setup), branch, merge, rebase, stash, worktree | `references/core.md` | atomic git op needed |
 | `github` | PR, review, issues, repo setup, releases, CI | `references/github.md` | anything touching GitHub |
 | `workflows` | feature, bugfix, refactor, release, hotfix sequences | `references/workflows.md` | multi-step task |
 | `decisions` | when to use what, risk table, situation → action map | `references/decisions.md` | user needs guidance on approach |

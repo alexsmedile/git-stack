@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.7.1] — 2026-07-08
+
+### Added
+- **Commit identity (noreply email) setup** in `references/core.md`: documents GitHub's `ID+username@users.noreply.github.com` format, the pre-2017 caveat, and a step-by-step setup flow (check existing email → https://github.com/settings/emails → tick "Keep my email addresses private" → paste the shown address → set + confirm). Never construct the ID-prefixed address — only GitHub shows it.
+- Surfaced "commit identity (noreply email setup)" in the `git-ops` SKILL.md domain map so the skill routes email setup to `core.md`.
+
+---
+
 ## [1.7.0] — 2026-07-08
 
 ### Breaking

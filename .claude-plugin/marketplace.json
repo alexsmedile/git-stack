@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
-    "version": "1.7.0"
+    "version": "1.7.1"
   },
   "plugins": [
     {
       "name": "git-stack",
       "source": "./",
       "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
-      "version": "1.7.0",
+      "version": "1.7.1",
       "author": {
         "name": "Alessandro Smedile"
       },
