@@ -4,6 +4,9 @@ output/*
 !output/.gitkeep
 _backups/
 _archive/
+.env
+.env.*
 
 # Octopus machine-local activity state (absolute paths) — D110
 .octopus/config.local.toml
+.spectacular.local/

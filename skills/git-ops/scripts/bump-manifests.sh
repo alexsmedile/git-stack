@@ -4,8 +4,9 @@
 #
 # Project-level only: package.json, pyproject.toml, Cargo.toml, composer.json,
 # *.gemspec, pom.xml, build.gradle, VERSION, .claude-plugin/plugin.json,
-# .claude-plugin/marketplace.json (.metadata.version + .plugins[].version),
-# .codex-plugin/plugin.json, README.md shields.io version badge.
+# .claude-plugin/marketplace.json (.metadata.version + existing plugin versions),
+# .codex-plugin/plugin.json, .cursor-plugin/plugin.json,
+# README.md shields.io version badge.
 #
 # CHANGELOG.md is NOT touched — entries are written by /wrap-up's changelog phase.
 # Component-level versions (per-skill SKILL.md, per-command frontmatter) are
@@ -124,7 +125,9 @@ bump_json_top_version() {
   ' "$file" | write_inplace "$file"
 }
 
-# Replace marketplace.json .metadata.version + every .plugins[].version.
+# Replace marketplace.json .metadata.version and plugin versions that already
+# exist. Do not add plugin-entry versions: Claude recommends versioning in
+# either plugin.json or the marketplace entry, not both.
 # Uses jq if available (clean), falls back to a coarser sed-style awk pass.
 bump_marketplace_json() {
   local file="$1"
@@ -132,7 +135,7 @@ bump_marketplace_json() {
     local tmp; tmp=$(mktemp)
     jq --arg v "$TARGET" '
       (if .metadata? then .metadata.version = $v else . end)
-      | (if .plugins? then .plugins |= map(.version = $v) else . end)
+      | (if .plugins? then .plugins |= map(if has("version") then .version = $v else . end) else . end)
     ' "$file" > "$tmp" && mv "$tmp" "$file"
   else
     # Fallback: rewrite every "version": "..." occurrence in the file. Coarse
@@ -317,13 +320,17 @@ if [ -d .claude-plugin ]; then
     else
       cur=$(grep -m1 '"version"' .claude-plugin/marketplace.json | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
     fi
-    plan ".claude-plugin/marketplace.json" "$cur" "Claude marketplace (.metadata + .plugins[].version)"
+    plan ".claude-plugin/marketplace.json" "$cur" "Claude marketplace (.metadata + existing plugin versions)"
   fi
 fi
 
 # Codex plugin
 if [ -d .codex-plugin ] && [ -r .codex-plugin/plugin.json ]; then
   plan ".codex-plugin/plugin.json" "$(json_top_version .codex-plugin/plugin.json)" "Codex plugin manifest"
+fi
+
+if [ -d .cursor-plugin ] && [ -r .cursor-plugin/plugin.json ]; then
+  plan ".cursor-plugin/plugin.json" "$(json_top_version .cursor-plugin/plugin.json)" "Cursor plugin manifest"
 fi
 
 # README badge (only if it actually carries a version badge)
@@ -386,6 +393,7 @@ for i in $(seq 0 $((${#PLAN_FILE[@]} - 1))); do
     package.json|composer.json) bump_json_top_version "$file" || ok=0 ;;
     .claude-plugin/plugin.json) bump_json_top_version "$file" || ok=0 ;;
     .codex-plugin/plugin.json)  bump_json_top_version "$file" || ok=0 ;;
+    .cursor-plugin/plugin.json) bump_json_top_version "$file" || ok=0 ;;
     .claude-plugin/marketplace.json) bump_marketplace_json "$file" || ok=0 ;;
     pyproject.toml) bump_toml_section_version "$file" "${PROJ_TOML_SECTION:-project}" || ok=0 ;;
     Cargo.toml)     bump_toml_section_version "$file" "package" || ok=0 ;;

@@ -174,13 +174,13 @@ gh pr create --title "refactor(payment): extract and simplify calculation logic"
 1. Confirm main is stable (CI green, no pending critical fixes)
 2. Decide version number (semver)
 3. Update CHANGELOG / release notes
-4. Tag the commit
-5. Push tag
-6. Create GitHub release
-7. (Optional) trigger deployment
+4. Bump and audit manifests
+5. Commit and push
+6. Tag and push tag
+7. Create GitHub release
 ```
 
-**Full sequence:**
+**Script-first sequence:**
 ```bash
 # 1. Confirm CI is green
 gh run list --branch main --limit 3
@@ -193,16 +193,21 @@ gh run list --branch main --limit 3
 # 3. Update CHANGELOG.md (if maintained manually)
 # Or use gh release --generate-notes for auto-generated notes
 
-# 4. Commit changelog update
+# 4. Bump and audit manifests
+bash "$GIT_STACK_DIR/scripts/bump-manifests.sh" 1.2.0
+bash "$GIT_STACK_DIR/scripts/check-manifests.sh"
+
+# 5. Commit and push through the compact safety runner
 git add CHANGELOG.md
-git commit -m "chore(release): prepare v1.2.0 changelog"
-git push origin main
+# Run only after the user explicitly approves the release commit on main.
+bash "$GIT_STACK_DIR/scripts/git-stack.sh" push --execute \
+  --message "chore: release v1.2.0" --allow-main
 
-# 5. Tag
-git tag -a v1.2.0 -m "Release v1.2.0"
-git push origin v1.2.0
+# 6. Check, tag, and push the annotated tag
+bash "$GIT_STACK_DIR/scripts/git-stack.sh" tag --version 1.2.0
+bash "$GIT_STACK_DIR/scripts/git-stack.sh" tag --version 1.2.0 --execute
 
-# 6. GitHub release
+# 7. GitHub release
 gh release create v1.2.0 \
   --title "v1.2.0" \
   --generate-notes        # auto-generates from merged PRs
@@ -216,6 +221,7 @@ gh release edit v1.2.0 --draft=false
 **Guardrails:**
 - Never tag on a branch — only tag on main (or your release branch)
 - Always verify CI is green on main before tagging
+- Pass `--allow-main` only after the user explicitly approves the release commit
 - Use `--generate-notes` unless you maintain a manual changelog — it's reliable
 
 ---

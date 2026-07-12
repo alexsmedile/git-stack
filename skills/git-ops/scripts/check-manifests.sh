@@ -40,6 +40,11 @@ fm_version() {  # markdown frontmatter
   awk '
     /^---[[:space:]]*$/ { if (++c == 1) next; if (c == 2) exit }
     c == 1 && /^version:/ { sub(/^version:[[:space:]]*/,""); gsub(/["'\'']/,""); print; exit }
+    c == 1 && /^metadata:[[:space:]]*$/ { in_metadata=1; next }
+    c == 1 && in_metadata && /^[^[:space:]]/ { in_metadata=0 }
+    c == 1 && in_metadata && /^[[:space:]]+version:/ {
+      sub(/^[[:space:]]+version:[[:space:]]*/,""); gsub(/["'\'']/,""); print; exit
+    }
   ' "$1" 2>/dev/null
 }
 
@@ -209,6 +214,12 @@ if [ -d .codex-plugin ]; then
   [ -r .codex-plugin/plugin.json ] && add_proj ".codex-plugin/plugin.json" "$(json_top_version .codex-plugin/plugin.json)"
 fi
 
+# Cursor plugin ----------
+if [ -d .cursor-plugin ]; then
+  mark_detected "Cursor plugin"
+  [ -r .cursor-plugin/plugin.json ] && add_proj ".cursor-plugin/plugin.json" "$(json_top_version .cursor-plugin/plugin.json)"
+fi
+
 # --- always-applicable: CHANGELOG + README badge -----------------------------
 
 for cl in docs/CHANGELOG.md CHANGELOG.md; do
@@ -227,12 +238,12 @@ if [ -r README.md ]; then
   add_proj "README.md (badge)" "$readme_ver"
 fi
 
-# --- component-level: only if Claude/Codex plugin detected -------------------
+# --- component-level: plugin and skill bundles -------------------------------
 
-if [ -d .claude-plugin ] || [ -d .codex-plugin ] || [ -d skills ] || [ -d commands ] || [ -d agents ]; then
+if [ -d .claude-plugin ] || [ -d .codex-plugin ] || [ -d .cursor-plugin ] || [ -d skills ] || [ -d adapters ]; then
   while IFS= read -r f; do
     add_comp "$f" "$(fm_version "$f")"
-  done < <(find skills commands agents .claude .agents -maxdepth 6 -type f -name "*.md" 2>/dev/null | sort)
+  done < <(find skills adapters .claude .agents -maxdepth 7 -type f -name "*.md" 2>/dev/null | sort)
 fi
 
 # --- if nothing detected, bail -----------------------------------------------
@@ -240,7 +251,7 @@ fi
 if [ ${#PROJ_LOCS[@]} -eq 0 ] && [ ${#COMP_LOCS[@]} -eq 0 ]; then
   echo "No recognized version-bearing files in this repo."
   echo "Looked for: package.json, pyproject.toml, Cargo.toml, composer.json, *.gemspec,"
-  echo "pom.xml, build.gradle, VERSION, .claude-plugin/, .codex-plugin/, CHANGELOG.md, README.md."
+  echo "pom.xml, build.gradle, VERSION, .claude-plugin/, .codex-plugin/, .cursor-plugin/, CHANGELOG.md, README.md."
   exit 2
 fi
 

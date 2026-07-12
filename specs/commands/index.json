@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "Canonical command bodies and generated adapter metadata for git-stack.",
+  "commands": [
+    { "name": "commit", "source": "adapters/claude/commands/commit.md" },
+    { "name": "push", "source": "adapters/claude/commands/push.md" },
+    { "name": "release", "source": "adapters/claude/commands/release.md" },
+    { "name": "changelog", "source": "adapters/claude/commands/changelog.md" },
+    { "name": "update-docs", "source": "adapters/claude/commands/update-docs.md" },
+    { "name": "wrap-up", "source": "adapters/claude/commands/wrap-up.md" },
+    { "name": "cleanup", "source": "adapters/claude/commands/cleanup.md" }
+  ]
+}

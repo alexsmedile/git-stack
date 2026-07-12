@@ -27,7 +27,8 @@ Prefer GitHub's **noreply** address over a real email — keeps the personal add
 Never guess or construct the address — the ID is account-specific and only GitHub shows it.
 
 ### Author-email leak check
-Run BEFORE every commit and every push — this is a helper script, not a manual grep:
+The common commit/push runner calls this helper automatically. Run it directly
+only for identity-specific diagnosis:
 ```bash
 bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh" --staged   # before committing (checks configured user.email)
 bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh"            # before pushing (checks HEAD author + committer)
@@ -42,9 +43,9 @@ Why a script and not a manual check: during a mailmap migration the author can e
 **Attribution rule**: the commit author must be the user's GitHub noreply alias so GitHub links the work to their profile. If the check warns, fix going forward with `git config --global user.email` (see setup flow above); fix history with `git filter-repo --mailmap` (rewrites author **and** committer, preserves dates and content, requires force-push).
 
 ### Secrets / API key scan
-Run BEFORE every commit on ADDED lines only:
+The common runner owns the canonical ADDED-lines scan:
 ```bash
-git diff --cached | grep '^+' | grep -v '^+++' | grep -nE '(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
+bash "${CLAUDE_SKILL_DIR}/scripts/git-stack.sh" commit
 ```
 If matched: STOP. Block commit unless overridden or clean filter is set up (see `decisions.md`).
 

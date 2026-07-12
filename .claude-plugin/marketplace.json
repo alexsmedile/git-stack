@@ -4,15 +4,14 @@
     "name": "Alessandro Smedile"
   },
   "metadata": {
-    "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
-    "version": "1.7.2"
+    "description": "Portable, script-first Git and GitHub workflows with compact safety checks.",
+    "version": "1.10.0"
   },
   "plugins": [
     {
       "name": "git-stack",
       "source": "./",
-      "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
-      "version": "1.7.2",
+      "description": "Portable, script-first Git and GitHub workflows with compact safety checks.",
       "author": {
         "name": "Alessandro Smedile"
       },

@@ -9,18 +9,8 @@
   "homepage": "https://github.com/alexsmedile/git-stack",
   "repository": "https://github.com/alexsmedile/git-stack",
   "license": "MIT",
-  "keywords": [
-    "git",
-    "github",
-    "commit",
-    "pull-request",
-    "workflow",
-    "branching",
-    "rebase",
-    "readme",
-    "devtools",
-    "claude-code"
-  ],
-  "commands": "./adapters/claude/commands/",
-  "agents": ["./adapters/claude/agents/git-stack-runner.md"]
+  "keywords": ["git", "github", "commit", "release", "workflow"],
+  "category": "developer-tools",
+  "tags": ["git", "github", "automation"],
+  "skills": "./skills/"
 }

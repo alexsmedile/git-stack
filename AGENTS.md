@@ -4,53 +4,80 @@ This file provides guidance to AI agents (Claude Code, Codex, Gemini) when worki
 
 ## What This Is
 
-`git-stack` is a skill bundle containing Git/GitHub skills and slash commands for Claude Code. It lives inside the `skills_db` vault and is managed by `apm`. It is **not** a software project — there is no build, test, or lint pipeline.
+`git-stack` is a portable Git/GitHub skill bundle with Claude Code command
+adapters. It lives inside the `skills_db` vault and is managed by `apm`. It is
+not an application project: there is no conventional build or test suite, but
+the distribution and shell validators are release gates.
 
 ## Structure
 
 ```
 git-stack/
+├── plugin.json          # Antigravity plugin manifest
+├── .claude-plugin/       # Claude Code manifest + marketplace
+├── .codex-plugin/        # Codex plugin manifest
+├── .cursor-plugin/       # Cursor skill-only manifest + marketplace
+├── .agents/plugins/      # Codex repo marketplace
+├── adapters/claude/       # Claude-only commands and optional Sonnet runner
+├── specs/commands/        # Canonical command catalog for generated adapters
 ├── skills/
 │   ├── git-ops/          # Main orchestration skill (load references on demand)
 │   │   ├── SKILL.md        # Entry point — domain map and safety rules
-│   │   └── references/     # Load only what's needed for the task
+│   │   ├── references/     # Load only what's needed for the task
 │   │       ├── core.md     # Atomic Git ops: commit, branch, merge, rebase, stash, worktree
 │   │       ├── github.md   # GitHub ops: PR, issues, releases, repo setup
 │   │       ├── workflows.md # End-to-end sequences: feature, bugfix, release, hotfix
 │   │       └── decisions.md # When to use what — situational decision guide
+│   │   └── scripts/       # Compact Git, install, manifest, and release validators
 │   └── repo-prettifier/      # README improvement skill (interactive, 4-phase)
 │       └── SKILL.md
-├── agents/
-│   └── git-stack-runner.md # Sonnet subagent: runs commit/push checks headlessly, returns a verdict
-└── commands/
-    ├── commit.md           # /commit — safe local commit with pre-flight checks
-    ├── push.md             # /push — safe commit + push with pre-flight checks
-    ├── changelog.md        # /changelog — draft and write a CHANGELOG entry
-    ├── update-docs.md      # /update-docs — changelog + all project docs update
-    └── wrap-up.md          # /wrap-up — full release wrap-up (version, changelog, commit, tag, push)
+└── docs/DISTRIBUTION.md  # Per-harness install/update/release contract
 ```
 
 `_archive/` contains superseded versions — do not modify or reference them.
 
 ## Agents
 
-**`git-stack-runner`** (`agents/git-stack-runner.md`, model `sonnet`) runs the
-mechanical `commit`/`push` pre-flight sequence headlessly and does the git writes
-when the tree is clean, returning a one-line verdict. Purpose: keep the noisy
-`git status`/`diff`/scan output and the write ops off the main orchestrator's
-context, on a cheaper model.
+Common commit/push/tag/release work is script-first and runs inline through
+`skills/git-ops/scripts/git-stack.sh`. It returns compact `KEY=value` verdicts,
+so routine work does not justify a second model context.
 
-Division of labour: the agent does all **read-only checks + clean-path writes**;
-the **orchestrator owns every blocker decision** (the `AskUserQuestion` modal) —
-a plugin agent runs autonomously and cannot ask the user. On a HIGH blocker,
-non-`main` branch, or diverged remote, the agent stops without writing and
-returns a `BLOCKED` verdict for the orchestrator to resolve. `/commit` and
-`/push` delegate here by default (see their "Delegate the mechanical work"
-sections); run inline only when the agent is unavailable or the user wants to
-watch each check.
+**`git-stack-runner`** (`adapters/claude/agents/git-stack-runner.md`, model `sonnet`) is an
+optional Claude Code fallback for explicitly delegated, high-volume Git checks.
+It calls the same script and never loads the prose references. Do not delegate
+routine commit, push, tag, or release work.
 
-Not supported in plugin agents: `hooks`, `mcpServers`, `permissionMode`. Both
-Claude Code and Codex auto-discover `agents/` at the plugin root.
+Claude Code plugin agents support `model: sonnet`, but
+`CLAUDE_CODE_SUBAGENT_MODEL` and a per-invocation model override that field.
+Other harnesses use incompatible agent schemas and paths. Keep the portable
+behavior in `SKILL.md` + scripts and treat agents as optional adapters. Use
+`scripts/install-harness.mjs` to install native adapters for Claude Code,
+Codex, Cursor, or OpenCode. Pass `--with-command-skills` for non-Claude
+harnesses to generate all command workflows as local Agent Skills; narrow the
+default set with inverted `--no-*` flags. Antigravity subagents inherit the
+parent model, so the installer intentionally supports its skill and command
+skills only.
+
+Cursor and OpenCode runner adapters require an explicit model. Do not select a
+model merely because its ID is valid: verify that it is actually a smaller,
+lower-cost choice for the user's account and plan.
+
+The Claude manifest explicitly points to `adapters/claude/agents/`. Do not put
+the runner under root `agents/`: Cursor and Antigravity also scan that name and
+must not parse Claude's `model: sonnet`. The Cursor and Codex manifests export
+only `skills/`; Antigravity uses root `plugin.json`; OpenCode consumes the Agent
+Skills directly because its plugins are JavaScript/TypeScript event modules.
+
+## Distribution
+
+`docs/DISTRIBUTION.md` owns native install, update, and marketplace instructions.
+`specs/commands/index.json` owns the command catalog used by generated
+command-skill adapters. Run `generate-command-skills.mjs --check` when auditing
+generated output.
+Before a release, run `scripts/bump-manifests.sh`, `scripts/check-manifests.sh`,
+then `scripts/validate-distribution.mjs --native`. The last command validates
+all manifests and performs an isolated Codex marketplace install. Do not tag or
+publish when it reports `DISTRIBUTION=INVALID`.
 
 ## Skill Architecture
 
@@ -62,7 +89,12 @@ Reference files are loaded on demand — only read the one(s) relevant to the cu
 
 **repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
 
-**commands/** are slash commands (not skills). `commit.md` and `push.md` are **thin orchestrators** — they own the sequence and confirmation flow, while `git-ops/references/core.md` owns the canonical pattern definitions and severity rules (secrets scan, `.env` detection, hardcoded path scan, large file check, `.gitignore` audit, unstaged changes prompt, branch safety warning). Update patterns in core.md once, both commands inherit. `changelog.md` drafts changelog entries. `update-docs.md` updates CHANGELOG, README, AGENTS, CLAUDE, and GEMINI docs. `wrap-up.md` orchestrates a full release (version bump → docs → commit → tag → push). All checks run before asking the user — never interrupt mid-check.
+**`adapters/claude/commands/`** contains Claude slash commands (not portable
+skills). `commit.md`, `push.md`,
+`release.md`, and `wrap-up.md` are thin orchestrators over `git-stack.sh` and
+the manifest scripts. The script owns canonical checks and compact reporting;
+`core.md` explains non-routine policy and remediation. All checks run before
+asking the user — never interrupt mid-check.
 
 ## Key Safety Rules (apply to all skills in this bundle)
 
@@ -84,12 +116,23 @@ apm --mode skills install git-ops
 apm --mode skills --project-dir /path/to/project install git-ops
 ```
 
-Commands (`commit.md`, `push.md`, `changelog.md`, `update-docs.md`, `wrap-up.md`) are slash commands invoked directly in Claude Code — they do not go through `apm`.
+Commands (`commit.md`, `push.md`, `changelog.md`, `update-docs.md`,
+`release.md`, `wrap-up.md`) are Claude Code slash-command adapters — they do
+not go through `apm`.
+
+Claude plugin commands are namespaced (`/git-stack:commit`,
+`/git-stack:push`). The optional `skills/git-ops/scripts/install-shortcuts.mjs`
+installer can copy or link selected commands into `.claude/commands/` or the
+user Claude command directory for short `/commit` and `/push` aliases. It is
+collision-safe and reversible; plugin command files remain authoritative.
 
 ## Editing Skills
 
 - Keep `SKILL.md` under 500 lines
 - Reference files go in `references/` — they are loaded on demand, not auto-loaded
 - Version bumps: patch for fixes, minor for new behavior, major for rewrites
-- Update `version:` in frontmatter on every meaningful change
+- Store skill versions as `metadata.version` in frontmatter; top-level
+  `version` is not part of the cross-harness Agent Skills schema
+- Keep runtime requirements in the skill body; `compatibility` is not accepted
+  by the current Codex Agent Skills validator
 - Archive superseded versions in `versions/` as `SKILL@x.y.z.md` (do not put in `_archive/`)

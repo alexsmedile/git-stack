@@ -1,0 +1,16 @@
+{
+  "name": "git-stack",
+  "owner": {
+    "name": "Alessandro Smedile"
+  },
+  "metadata": {
+    "description": "Portable, script-first Git and GitHub workflows with compact safety checks."
+  },
+  "plugins": [
+    {
+      "name": "git-stack",
+      "source": "./",
+      "description": "Portable, script-first Git and GitHub workflows with compact safety checks."
+    }
+  ]
+}

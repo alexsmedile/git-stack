@@ -1,13 +1,19 @@
 {
   "name": "git-stack",
-  "version": "1.7.2",
-  "description": "Modular Git & GitHub skill bundle for Claude Code and Codex — orchestration, safe commits, PRs, and README prettification.",
+  "version": "1.10.0",
+  "description": "Portable, script-first Git and GitHub workflows with compact safety checks.",
+  "author": {
+    "name": "Alessandro Smedile"
+  },
+  "homepage": "https://github.com/alexsmedile/git-stack",
+  "repository": "https://github.com/alexsmedile/git-stack",
+  "license": "MIT",
+  "keywords": ["git", "github", "commit", "release", "workflow"],
   "skills": "./skills/",
-  "hooks": "./hooks/hooks-codex.json",
   "interface": {
     "displayName": "git-stack",
-    "shortDescription": "Safe commits, PRs, and Git workflows for Claude Code.",
-    "longDescription": "Modular Git & GitHub skill bundle: orchestrated workflows, safe commits with pre-flight checks, pull request creation, branch management, rebase helpers, and README prettification.",
+    "shortDescription": "Compact, safe Git and GitHub workflows for Codex.",
+    "longDescription": "Script-first Git and GitHub workflows for safe commits, pushes, releases, pull requests, branch management, and repository presentation.",
     "developerName": "Alessandro Smedile",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],

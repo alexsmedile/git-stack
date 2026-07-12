@@ -1,0 +1,5 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "git-stack",
+  "description": "Portable, script-first Git and GitHub workflows with compact safety checks."
+}

@@ -5,6 +5,93 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.10.0] — 2026-07-12
+
+### Added
+- Optional Claude Code shortcut installer for project-local or user-global
+  `/commit` and `/push` aliases, with dry-run, collision protection, copy or
+  symlink mode, ownership metadata, and uninstall support.
+
+### Changed
+- Documentation now distinguishes canonical namespaced plugin commands
+  (`/git-stack:commit`, `/git-stack:push`) from opt-in standalone aliases.
+- `git-ops` now carries a concise first-use hint for offering the shortcut
+  installer only when aliases are requested or missing.
+- Added a single command catalog and generator-backed command-skill adapter for
+  project/global non-Claude installs, with all workflows enabled by default and
+  inverted `--no-*` exclusions.
+
+## [1.9.0] — 2026-07-12
+
+### Added
+- Cross-harness installer for Claude Code, Codex, Cursor, Antigravity, and
+  OpenCode. It installs the portable skill into native project/global paths and
+  can render optional native runner adapters with harness-appropriate schemas.
+- Cursor skill-only plugin manifest under `.cursor-plugin/plugin.json`.
+- Cursor marketplace index, Antigravity `plugin.json`, and a cross-harness
+  distribution guide covering native install/update/release workflows.
+- Manifest auditing and bumping for Cursor plugin versions.
+- `validate-distribution.mjs`: deterministic manifest/linkage audit plus native
+  Claude, Codex, Antigravity, and OpenCode verification when their CLIs are
+  installed.
+
+### Changed
+- `git-ops` skill version moved to standards-compatible
+  `metadata.version: 1.7.0`; top-level `version` and `compatibility` are no
+  longer used in skill frontmatter.
+- `repo-prettifier` 1.0.1 now uses the same portable `metadata.version`
+  frontmatter shape; its 1.0.0 definition is archived under `versions/`.
+- Cross-platform claims now distinguish the portable Skill/script core from
+  incompatible agent formats. Antigravity is skill-only because its documented
+  subagents inherit the parent model; OpenCode requires a provider-qualified
+  model for an optional adapter.
+- Cursor adapters now require an explicit, verified small/low-cost model ID;
+  the previous frontier-model default was removed.
+- `git-ops` 1.7.1 records that model validity does not imply low cost and
+  requires documented cost/capability evidence before choosing a default.
+- `git-ops` 1.8.0 and `/release` 2.1.0 add the distribution validator as a
+  mandatory pre-tag gate for plugin bundles.
+- Claude's optional runner moved to `adapters/claude/agents/` and is declared
+  through the Claude manifest, preventing Cursor and Antigravity from parsing a
+  Claude-specific agent definition.
+- Claude slash commands moved to `adapters/claude/commands/`; Antigravity now
+  validates the package without converting Claude-only commands into skills.
+- Claude marketplace entries no longer duplicate the plugin version. Codex and
+  Cursor manifests now carry complete repository/publisher metadata; the Codex
+  marketplace uses the native install policy and verified GitHub linkage.
+- Empty hook stubs and the redundant Codex hook manifest field were removed.
+- Archived `git-ops` v1.6.0 before the cross-harness frontmatter revision and
+  v1.7.0 before correcting Cursor model selection.
+
+---
+
+## [1.8.0] — 2026-07-12
+
+### Added
+- `scripts/git-stack.sh`: compact cross-runtime runner for commit, push, tag,
+  and release gates. It centralizes staged-secret, `.env`, absolute-path,
+  large-file, identity, manifest, branch, upstream, and tag checks and emits
+  parsable `KEY=value` verdicts instead of raw logs.
+- Archived `git-ops` v1.5.0 under `skills/git-ops/versions/` before the v1.6.0
+  workflow revision.
+
+### Changed
+- Routine `/commit`, `/push`, `/release`, and `/wrap-up` paths now run inline
+  through scripts and do not spawn a sub-agent. The Claude runner remains an
+  optional Sonnet adapter for explicitly delegated high-volume work and is
+  capped at four turns.
+- Corrected the branch guard: feature branches are the normal commit/push path;
+  direct writes to `main`/`master` block unless the user explicitly overrides
+  the policy. Tags still require the default/release branch.
+- Documented runtime model behavior: Claude Code supports `model: sonnet` in
+  plugin-agent frontmatter but environment/per-invocation settings can override
+  it; Codex uses separate TOML custom-agent definitions and does not currently
+  expose one portable plugin-agent format.
+- Simplified `/wrap-up`: no version saves through `/push`; an explicit version
+  runs `/release`, avoiding an extra tag decision on ordinary session saves.
+
+---
+
 ## [1.7.2] — 2026-07-08
 
 ### Added
