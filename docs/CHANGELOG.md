@@ -5,6 +5,41 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ---
 
+## [1.11.0] — 2026-08-10
+
+### Added
+- `git-stack.sh cleanup` — read-only repo hygiene report returning counts for
+  merged/stale/unsynced/gone branches, stashes, tracked junk, packed and loose
+  size. Stale window configurable via `--stale-days`.
+- `git-stack.sh scan` — read-only commit report since the last tag, grouped by
+  Conventional Commit type, with breaking-change and unconventional-subject
+  detection.
+- `repo-prettifier/references/design.md` — visual design decisions, the ten
+  design patterns, tone rules, badge templates, and output format.
+
+### Changed
+- `/cleanup` and `/changelog` call the script's read-only reports instead of
+  parsing raw `git branch`, `git stash list`, `git count-objects`, and
+  `git log` output, keeping that output out of context.
+- `repo-prettifier` `SKILL.md` reduced from ~15.3KB to ~6.7KB; design content
+  now loads on demand at Phase 3.
+- Trimmed the `git-ops` and `repo-prettifier` skill descriptions, which load
+  every session in every project.
+- Safety rules now have a single home in `git-ops/SKILL.md`; `references/core.md`
+  defers to it instead of restating branch, rebase, and force-push guardrails.
+- Renumbered the safety rules to a clean 1–19 and folded in the pull-request
+  rules, which previously collided at 11 and 12.
+- The large-file threshold is cited from `git-stack.sh` rather than duplicated
+  as a hardcoded `500KB` in prose.
+
+### Fixed
+- `cleanup` size reporting split into `PACKED_SIZE` and `LOOSE_SIZE` with
+  anchored `count-objects` patterns; loose-only repositories previously
+  reported `0bytes` while holding real data.
+- `AGENTS.md` now documents `references/cleanup.md` and all seven commands, and
+  no longer describes `changelog`, `update-docs`, and `cleanup` as script-backed
+  when only some are.
+
 ## [1.10.0] — 2026-07-12
 
 ### Added

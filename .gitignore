@@ -7,6 +7,10 @@ _archive/
 .env
 .env.*
 
-# Octopus machine-local activity state (absolute paths) — D110
-.octopus/config.local.toml
+# Machine-local tool state — not part of the bundle.
+# .spectacular/ itself IS tracked; only the .local/ sidecar is ignored.
+.octopus/
 .spectacular.local/
+
+# Drafts, not distributed with the skill bundle
+articles/
