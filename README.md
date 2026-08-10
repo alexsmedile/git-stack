@@ -17,12 +17,17 @@ Antigravity, and OpenCode — script-first orchestration with safe defaults.
 |-----------|-----------|-------------|
 | `git-ops` | `/git-stack:git-ops` | Orchestration layer for all Git/GitHub work — decision guide, atomic ops, multi-step workflows |
 | `repo-prettifier` | `/git-stack:repo-prettifier` | Interactive README upgrade — positions, designs, and writes a high-converting README |
-| `/commit` | `/git-stack:commit` | Optional short alias; the namespaced plugin command is canonical |
-| `/push` | `/git-stack:push` | Optional short alias; the namespaced plugin command is canonical |
+| `/commit` | `/git-stack:commit` | Safe local commit with the full pre-flight check suite |
+| `/push` | `/git-stack:push` | Everything `/commit` does, plus remote state checks and a guarded push |
 | `/release` | `/git-stack:release` | Bump manifests, update changelog, commit, push, and tag a release |
 | `/changelog` | `/git-stack:changelog` | Draft and write a CHANGELOG entry for changes since the last tag |
 | `/update-docs` | `/git-stack:update-docs` | Update CHANGELOG + all project docs after major changes |
 | `/wrap-up` | `/git-stack:wrap-up` | Full release wrap-up — version bump, changelog, README patches, commit, tag, push |
+| `/cleanup` | `/git-stack:cleanup` | Repo hygiene scan — dead/stale branches, junk, stashes, space reclaim. Read-only by default |
+
+Claude Code namespaces plugin commands, so `/git-stack:commit` and
+`/git-stack:push` are canonical; the short `/commit` and `/push` forms are
+optional aliases installed by `install-shortcuts.mjs`.
 
 ## Install
 
@@ -246,6 +251,14 @@ tagging while the orchestrator handles the small amount of semantic editing.
 With no version, saves the session through `/push`. With a version, runs the
 exact `/release` path. It no longer asks an open-ended tag question after every
 ordinary save.
+
+### `/cleanup`
+
+Repo hygiene scan — merged/stale/unsynced branches, junk files, forgotten
+stashes, and reclaimable space. Report-first and read-only by default;
+`--deep` runs safe `gc`/`prune`, and any history rewrite stays behind an
+explicit warning. Checks and severity tiers live in
+`git-ops/references/cleanup.md`.
 
 ## Safety Rules
 
