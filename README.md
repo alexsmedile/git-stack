@@ -164,6 +164,16 @@ Routine commit, push, tag, and release paths are script-first. The bundled
 `git-stack.sh` runs the mechanical checks and returns compact `KEY=value`
 results, avoiding raw-log context bloat and a second model invocation.
 
+It also exposes two read-only reports that never write:
+
+| Op | Returns |
+|---|---|
+| `cleanup` | merged / stale / unsynced / gone branch counts, stashes, tracked junk, packed + loose size (`--stale-days` configurable) |
+| `scan` | commits since the last tag grouped by Conventional type, with breaking-change detection |
+
+`/cleanup` and `/changelog` call these instead of parsing raw `git branch`,
+`git stash list`, `git count-objects`, or `git log` output.
+
 ### `repo-prettifier`
 
 Transforms a bare README into a high-converting project page. Works interactively in 4 phases:
@@ -172,6 +182,9 @@ Transforms a bare README into a high-converting project page. Works interactivel
 2. Positioning interview — hooks, title options, audience, tone
 3. Visual design decisions — style, badges, icons, callouts, ASCII trees
 4. Write `README2.md` for review, then replace on confirmation
+
+Design patterns, tone rules, and badge templates live in
+`references/design.md`, loaded at phase 3 rather than on every invocation.
 
 ## Commands
 
@@ -188,7 +201,7 @@ Safe local commit. Thin orchestrator over the bundled compact preflight:
 - Secrets scan (canonical patterns from `git-ops/references/core.md` → OpenAI, Anthropic, GitHub, AWS, Google, Slack, Hugging Face, PEM blocks, etc.)
 - `.env` detection
 - Hardcoded absolute path detection
-- Large file check (>500KB staged, >1MB in repo)
+- Large file check (threshold owned by `git-stack.sh`; `--allow-large` to override)
 - `.gitignore` audit
 - Unstaged changes prompt
 - Branch safety warning (main/master)
@@ -255,14 +268,17 @@ ordinary save.
 ### `/cleanup`
 
 Repo hygiene scan — merged/stale/unsynced branches, junk files, forgotten
-stashes, and reclaimable space. Report-first and read-only by default;
+stashes, and reclaimable space. Backed by `git-stack.sh cleanup`, which returns
+counts rather than raw branch and stash listings; names are fetched only for
+categories you choose to act on. Report-first and read-only by default;
 `--deep` runs safe `gc`/`prune`, and any history rewrite stays behind an
 explicit warning. Checks and severity tiers live in
 `git-ops/references/cleanup.md`.
 
 ## Safety Rules
 
-All skills in this bundle enforce:
+The full list lives in `skills/git-ops/SKILL.md` → "Safety rules" (numbered
+1–19). Highlights:
 
 - Never commit directly to `main` — branch first
 - Never rebase shared branches
