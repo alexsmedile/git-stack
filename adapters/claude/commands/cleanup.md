@@ -33,20 +33,29 @@ Left border only — no right `│`, no corners (they break on padding).
 
 ---
 
-## Step 1 — Repo state
+## Step 1 — Scan (always)
+
+One read-only call returns every Tier 1 count. It fetches and prunes first, and
+never writes.
 
 ```bash
-git rev-parse --is-inside-work-tree 2>/dev/null || echo "not a git repo"
-git fetch --quiet 2>/dev/null
+bash "${CLAUDE_PLUGIN_ROOT}/skills/git-ops/scripts/git-stack.sh" cleanup
 ```
-Not a git repo → stop, tell the user.
+
+Keys: `BRANCHES_MERGED`, `BRANCHES_STALE`, `BRANCHES_UNSYNCED`, `BRANCHES_GONE`,
+`STASHES`, `OLDEST_STASH`, `PACKED_SIZE`, `LOOSE_SIZE`, `LOOSE_OBJECTS`,
+`TRACKED_JUNK`. `BLOCKER=not-a-git-repository` → stop. `VERDICT=CLEAN` → say so
+and stop.
+
+Tune the stale window with `--stale-days <n>` (default 90).
 
 ---
 
-## Step 2 — Tier 1 scan (always)
+## Step 2 — Report
 
-Run every Tier 1 check from `cleanup.md` (1a–1f). **Collect all findings first,
-then print one report box.** Nothing is deleted in this step.
+Print one box from the counts above. Do **not** re-run raw git scans to build
+it. Fetch names only for categories the user chooses to act on in Step 3 — e.g.
+`git branch --merged main` when they accept the merged-branch deletion.
 
 ```
 ┌─ CLEANUP REPORT · /Users/alex/repo · main

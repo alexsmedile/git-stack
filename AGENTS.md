@@ -22,12 +22,13 @@ git-stack/
 ├── specs/commands/        # Canonical command catalog for generated adapters
 ├── skills/
 │   ├── git-ops/          # Main orchestration skill (load references on demand)
-│   │   ├── SKILL.md        # Entry point — domain map and safety rules
+│   │   ├── SKILL.md        # Entry point — safety rules, domain map, script fast path
 │   │   ├── references/     # Load only what's needed for the task
-│   │       ├── core.md     # Atomic Git ops: commit, branch, merge, rebase, stash, worktree
+│   │       ├── core.md     # Atomic Git ops: commit, commit identity, branch, merge, stash, worktree
 │   │       ├── github.md   # GitHub ops: PR, issues, releases, repo setup
 │   │       ├── workflows.md # End-to-end sequences: feature, bugfix, release, hotfix
-│   │       └── decisions.md # When to use what — situational decision guide
+│   │       ├── decisions.md # When to use what — situational decision guide
+│   │       └── cleanup.md   # Repo hygiene: dead/stale branches, gc, big-blob purge
 │   │   └── scripts/       # Compact Git, install, manifest, and release validators
 │   └── repo-prettifier/      # README improvement skill (interactive, 4-phase)
 │       └── SKILL.md
@@ -89,20 +90,38 @@ Reference files are loaded on demand — only read the one(s) relevant to the cu
 
 **repo-prettifier** is a 4-phase interactive skill: research → positioning interview → visual design decisions → write. Never write a README before completing phases 1–3 with the user.
 
-**`adapters/claude/commands/`** contains Claude slash commands (not portable
-skills). `commit.md`, `push.md`,
-`release.md`, and `wrap-up.md` are thin orchestrators over `git-stack.sh` and
-the manifest scripts. The script owns canonical checks and compact reporting;
-`core.md` explains non-routine policy and remediation. All checks run before
-asking the user — never interrupt mid-check.
+**`adapters/claude/commands/`** contains seven Claude slash commands (not
+portable skills): `commit.md`, `push.md`, `release.md`, `wrap-up.md`,
+`changelog.md`, `update-docs.md`, and `cleanup.md`.
+
+`commit`, `push`, `release`, and `wrap-up` are thin orchestrators over
+`git-stack.sh` and the manifest scripts. The script owns canonical checks and
+compact reporting; `core.md` explains non-routine policy and remediation. All
+checks run before asking the user — never interrupt mid-check.
+
+`cleanup` and `changelog` call the script's read-only reports
+(`git-stack.sh cleanup` / `scan`), which return counts instead of raw git
+output. `update-docs` is the only command with no script backing. `cleanup`
+stays read-only by default; history rewrites remain behind an explicit warning.
+
+Script subcommands: `commit|push|tag|release` write; `cleanup|scan` never do.
+When adding a command, put the mechanical scan in the script and leave only
+judgment in the prompt.
 
 ## Key Safety Rules (apply to all skills in this bundle)
+
+`skills/git-ops/SKILL.md` → "Safety rules" is the single authoritative list
+(numbered 1–19). Do not restate rules here or in `references/` — a second copy
+drifts. The highlights, for orientation only:
 
 - Never commit directly to `main` — branch first
 - Never rebase shared branches — rebase is for personal/local branches only
 - Warn before any history rewrite (`rebase`, `reset --hard`, force push)
 - Prefer `--force-with-lease` over `--force`
 - Secrets never go in Git; `.env` must be in `.gitignore`
+
+Thresholds and overrides (large files, `--allow-large`, `--allow-main`) live in
+`scripts/git-stack.sh`, not in prose. Cite the script, don't copy its numbers.
 
 ## Installing / Using
 
@@ -117,8 +136,8 @@ apm --mode skills --project-dir /path/to/project install git-ops
 ```
 
 Commands (`commit.md`, `push.md`, `changelog.md`, `update-docs.md`,
-`release.md`, `wrap-up.md`) are Claude Code slash-command adapters — they do
-not go through `apm`.
+`release.md`, `wrap-up.md`, `cleanup.md`) are Claude Code slash-command
+adapters — they do not go through `apm`.
 
 Claude plugin commands are namespaced (`/git-stack:commit`,
 `/git-stack:push`). The optional `skills/git-ops/scripts/install-shortcuts.mjs`
