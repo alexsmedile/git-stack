@@ -15,10 +15,16 @@ REMOTE=origin
 ALLOW_MAIN=0
 ALLOW_LARGE=0
 NO_FETCH=0
+STALE_DAYS=90
 
 usage() {
   cat <<'EOF'
-Usage: git-stack.sh <commit|push|tag|release> [options]
+Usage: git-stack.sh <commit|push|tag|release|cleanup|scan> [options]
+
+Write ops: commit, push, tag, release
+Read-only reports (never write):
+  cleanup             Repo hygiene counts: branches, stashes, junk, size
+  scan                Commit subjects since last tag, grouped by type
 
 Options:
   --execute             Perform the clean-path write after checks pass
@@ -27,7 +33,8 @@ Options:
   --remote <name>       Remote name (default: origin)
   --allow-main          Explicitly allow commit/push on the default branch
   --allow-large         Explicitly allow staged files larger than 500KB
-  --no-fetch            Skip fetch during push/release checks
+  --no-fetch            Skip fetch during push/release/cleanup checks
+  --stale-days <n>      Stale-branch threshold for cleanup (default: 90)
 
 Exit: 0 clean/done, 1 blocker or command failure, 2 nothing to do.
 EOF
@@ -47,13 +54,14 @@ while (($#)); do
     --allow-main) ALLOW_MAIN=1 ;;
     --allow-large) ALLOW_LARGE=1 ;;
     --no-fetch) NO_FETCH=1 ;;
+    --stale-days) shift; STALE_DAYS=${1:-90} ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'VERDICT=BLOCKED\nBLOCKER=unknown-option:%s\n' "$1"; exit 1 ;;
   esac
   shift
 done
 
-case "$OP" in commit|push|tag|release) ;; *) usage; exit 1 ;; esac
+case "$OP" in commit|push|tag|release|cleanup|scan) ;; *) usage; exit 1 ;; esac
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   printf 'VERDICT=BLOCKED\nOP=%s\nBLOCKER=not-a-git-repository\n' "$OP"
@@ -65,6 +73,62 @@ default_branch=$(git symbolic-ref --quiet --short "refs/remotes/$REMOTE/HEAD" 2>
 if [[ -z "$default_branch" ]]; then
   case "$branch" in main|master) default_branch=$branch ;; *) default_branch=main ;; esac
 fi
+
+# ---- read-only reports: emit compact counts and exit, never write ----------
+if [[ "$OP" == cleanup ]]; then
+  [[ "$NO_FETCH" -eq 1 ]] || git fetch --quiet --prune "$REMOTE" >/dev/null 2>&1 || true
+
+  merged=$(git branch --merged "$default_branch" --format='%(refname:short)' 2>/dev/null \
+    | grep -vxE "$default_branch|main|master" | awk 'NF{n++} END{print n+0}')
+
+  cutoff=$(( $(date +%s) - STALE_DAYS * 86400 ))
+  stale=0; unsynced=0
+  while IFS=$'\t' read -r ref ts up; do
+    [[ -n "$ref" ]] || continue
+    [[ "$ref" == "$default_branch" ]] && continue
+    ((ts < cutoff)) && stale=$((stale + 1))
+    [[ -z "$up" ]] && unsynced=$((unsynced + 1))
+  done < <(git for-each-ref --format='%(refname:short)%09%(committerdate:unix)%09%(upstream:short)' refs/heads/ 2>/dev/null)
+
+  gone=$(git for-each-ref --format='%(upstream:track)' refs/heads/ 2>/dev/null | grep -c 'gone' || true)
+  stashes=$(git stash list 2>/dev/null | awk 'NF{n++} END{print n+0}')
+  oldest_stash=$(git stash list --format='%cr' 2>/dev/null | tail -1)
+  size=$(git count-objects -vH 2>/dev/null | awk '/^size-pack:/{print $2 $3}')
+  loose_size=$(git count-objects -vH 2>/dev/null | awk '/^size:/{print $2 $3}')
+  loose=$(git count-objects -v 2>/dev/null | awk '/^count:/{print $2}')
+  junk=$(git ls-files 2>/dev/null | grep -cE '(^|/)(\.DS_Store|Thumbs\.db|npm-debug\.log|\.env\.bak)$' || true)
+
+  printf 'OP=cleanup\nDEFAULT_BRANCH=%s\nBRANCHES_MERGED=%s\nBRANCHES_STALE=%s\nBRANCHES_UNSYNCED=%s\nBRANCHES_GONE=%s\nSTASHES=%s\nOLDEST_STASH=%s\nPACKED_SIZE=%s\nLOOSE_SIZE=%s\nLOOSE_OBJECTS=%s\nTRACKED_JUNK=%s\nSTALE_DAYS=%s\n' \
+    "$default_branch" "$merged" "$stale" "$unsynced" "${gone:-0}" "$stashes" "${oldest_stash:-none}" "${size:-unknown}" "${loose_size:-unknown}" "${loose:-0}" "${junk:-0}" "$STALE_DAYS"
+
+  if ((merged + stale + unsynced + stashes + junk + ${loose:-0} > 0)); then
+    printf 'VERDICT=DIRTY\n'
+  else
+    printf 'VERDICT=CLEAN\n'
+  fi
+  exit 0
+fi
+
+if [[ "$OP" == scan ]]; then
+  last_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+  range=${last_tag:+$last_tag..HEAD}
+  subjects=$(git log --no-merges --format='%s' ${range:-} 2>/dev/null || true)
+  total=$(printf '%s\n' "$subjects" | awk 'NF{n++} END{print n+0}')
+
+  printf 'OP=scan\nSINCE=%s\nCOMMITS=%s\n' "${last_tag:-repo-root}" "$total"
+  for t in feat fix docs refactor test chore perf ci; do
+    n=$(printf '%s\n' "$subjects" | grep -cE "^$t(\(|!|:)" || true)
+    ((n > 0)) && printf '%s=%s\n' "$(printf '%s' "$t" | tr '[:lower:]' '[:upper:]')" "$n"
+  done
+  other=$(printf '%s\n' "$subjects" | grep -vcE '^(feat|fix|docs|refactor|test|chore|perf|ci)(\(|!|:)' || true)
+  ((other > 0)) && printf 'UNCONVENTIONAL=%s\n' "$other"
+  printf '%s\n' "$subjects" | grep -qE '^[a-z]+(\(.*\))?!:|BREAKING CHANGE' && printf 'BREAKING=yes\n'
+
+  if ((total == 0)); then printf 'VERDICT=NOTHING_TO_DO\n'; exit 2; fi
+  printf 'VERDICT=CLEAN\n'
+  exit 0
+fi
+# ---------------------------------------------------------------------------
 
 staged_count=$(git diff --cached --name-only 2>/dev/null | awk 'NF{n++} END{print n+0}')
 unstaged_count=$(git status --porcelain 2>/dev/null | awk 'substr($0,1,2)!="??" && substr($0,2,1)!=" "{n++} END{print n+0}')

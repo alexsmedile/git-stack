@@ -20,32 +20,34 @@ The user typed `/changelog`. That **is** the instruction to write the entry — 
 
 ---
 
-## Step 1 — Baseline
+## Step 1 — Baseline + shape
 
 ```bash
-git tag --sort=-version:refname | head -5
-git log --oneline -20
+bash "${CLAUDE_PLUGIN_ROOT}/skills/git-ops/scripts/git-stack.sh" scan
 ```
 
-Identify the last tag. If none, use the first commit as baseline.
+Returns `SINCE`, `COMMITS`, per-type counts (`FEAT`, `FIX`, `DOCS`, …), and
+`BREAKING=yes` when present. `VERDICT=NOTHING_TO_DO` → nothing since last tag;
+report and stop.
 
-Read current CHANGELOG.md:
+Read the current changelog head only:
 ```bash
-cat CHANGELOG.md 2>/dev/null | head -60
+head -60 CHANGELOG.md 2>/dev/null
 ```
 
-If the most recent version entry in CHANGELOG.md is newer than the last tag, use that as the diff baseline instead.
+If the newest CHANGELOG entry is ahead of `SINCE`, use it as the baseline instead.
 
 ---
 
 ## Step 2 — Collect changes
 
+Pull subjects only when the scan counts aren't enough to write entries:
+
 ```bash
-git log <last-tag>..HEAD --oneline
-git diff <last-tag>..HEAD --stat
+git log <baseline>..HEAD --format='%s'
 ```
 
-Bucket each change:
+Skip `--stat` unless a change resists classification. Bucket each change:
 
 | Bucket | Triggers |
 |---|---|

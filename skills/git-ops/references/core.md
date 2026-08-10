@@ -9,7 +9,7 @@ Logical units only. One commit = one clear story.
 - **Subject**: ≤72 chars, imperative mood ("fix" not "fixed"), lowercase type.
 - **Format**: `type(scope): description`
 - **Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
-- **Guardrails**: No secrets, `.env`, `node_modules/`, build output, or staged files >500KB.
+- **Guardrails**: No secrets, `.env`, `node_modules/`, or build output. `git-stack.sh` owns the staged large-file threshold.
 
 ### Commit identity (email)
 Prefer GitHub's **noreply** address over a real email — keeps the personal address out of public history while still linking commits to the profile.
@@ -76,15 +76,13 @@ git log --all -p -- . | grep -nE "$SECRET_RE"
 ---
 
 ## git-stack.core.branch
-- **Convention**: Never work on `main`/`master`. Create features/fixes on dedicated branches.
 - **Naming**: `feat/` `fix/` `refactor/` `docs/` `chore/` (e.g., `feat/login-flow`).
 
 ---
 
 ## git-stack.core.merge & rebase
 - **Merge**: Use PRs on GitHub (preferred). Use `--no-ff` on `main` to preserve history if merging locally.
-- **Rebase**: Rebase local feature branch onto `main` frequently. Never rebase shared branches.
-- **Force Push**: Prefer `--force-with-lease` over `--force`. Never force push to shared branches.
+- **Rebase**: Rebase a local feature branch onto `main` frequently, so the eventual merge is small.
 
 ---
 

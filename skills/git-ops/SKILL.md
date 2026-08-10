@@ -1,14 +1,10 @@
 ---
 name: git-ops
 description: >
-  Git and GitHub orchestration with safe defaults — use this for branching,
-  committing, opening PRs, rebasing, resolving conflicts, tagging releases,
-  setting up repos, cleaning up a repo, or deciding the right workflow strategy.
-  Trigger whenever the user mentions push, pull, PR, branch, merge, rebase,
-  commit, tag, release, GitHub Actions, repo cleanup / pruning branches /
-  reclaiming space, or asks "how should I structure this repo" /
-  "what's the right workflow here" / "help me manage this". Always use
-  git-ops for git/GitHub work — it enforces safety rules Claude skips by default.
+  Git and GitHub work with enforced safety rules — commit, push, branch, merge,
+  rebase, PR, tag, release, repo setup, repo cleanup, or choosing a workflow.
+  Use for any git/GitHub task; it blocks secrets, bad branches, and unsafe
+  history rewrites that would otherwise slip through.
 metadata:
   version: "1.8.2"
 ---
@@ -27,7 +23,13 @@ GIT_STACK="${CLAUDE_SKILL_DIR:-<skill-directory>}/scripts/git-stack.sh"
 bash "$GIT_STACK" commit
 bash "$GIT_STACK" push
 bash "$GIT_STACK" tag --version 1.2.3
+bash "$GIT_STACK" cleanup      # read-only hygiene counts
+bash "$GIT_STACK" scan         # commit shape since last tag
 ```
+
+`cleanup` and `scan` never write. Prefer them over hand-rolled `git branch`,
+`git stash list`, `git count-objects`, or `git log` parsing — they return counts
+instead of raw output.
 
 Resolve `<skill-directory>` to this skill's directory on runtimes that do not
 set `CLAUDE_SKILL_DIR`. Treat exit `0` as clean/done, `1` as blocked, and `2` as
@@ -103,7 +105,7 @@ Read only the file needed for non-routine work.
 2. Never rebase shared branches — rebase is for local/personal branches only.
 3. Before any history rewrite (`rebase`, `reset --hard`, force push): run `git status` + `git diff --staged`, show the user what will be affected, and confirm before proceeding.
 4. Prefer `--force-with-lease` over `--force` — fails safely if remote has moved.
-5. Never tag on a branch — only tag on `main` (or the designated release branch).
+5. Only tag on `main`, or on the release branch this repo has designated. If the repo uses a release-branch workflow, confirm which branch that is rather than assuming `main` — see `references/workflows.md`.
 
 **Before acting**
 6. Run `git fetch` before any merge or rebase — never work from stale remote state.
@@ -112,16 +114,20 @@ Read only the file needed for non-routine work.
 **Files & secrets**
 8. Secrets never go in Git — `.env` must be in `.gitignore` before the first commit.
 9. `.gitignore` must exist before the first commit on any new repo.
-10. Warn before committing any file >500KB — confirm it belongs in the repo.
+10. `scripts/git-stack.sh` owns the staged large-file threshold and the `--allow-large` override. Surface what it flags; never override without explicit user approval.
 11. Before every commit, use `scripts/git-stack.sh`; it owns the canonical staged secret scan. For intentional secret-bearing config backups, read `references/decisions.md` for the clean-filter pattern.
 12. On request ("audit this repo", "check for leaks", "is it safe to make public"), run the three-pass repo-wide secret audit in `references/core.md` → "Repo-wide secret audit". Always check past commits, not just working tree.
 13. During push, let `scripts/git-stack.sh` run manifest and author-email checks. Manifest drift is a push warning and a release blocker.
-13b. The commit **author** must use the user's `@users.noreply.github.com` alias. Fix future commits with `git config user.email`; history repair requires `git filter-repo --mailmap` and explicit history-rewrite consent.
-14. When the user asks to **install a pre-commit secret-block hook** in a repo ("protect this repo from secret commits", "add the hook", "wire up the secrets guard"), invoke `scripts/install-hooks.sh <repo>`. The installer is preview-only — it prints the exact `cp` or `ln -s` command for the user to run. Never modify `.git/hooks/` automatically.
-15. For releases (`/release`, `/wrap-up`), use the **bump → audit** pattern: (a) preview with `scripts/bump-manifests.sh <target> --dry-run`, (b) execute `scripts/bump-manifests.sh <target>` to write the target version into every detected project-level location, (c) re-run `scripts/check-manifests.sh` and verify every reported version equals `<target>`. The post-write audit is the real release gate. If any location still drifts, offer to re-run the bumper; if it still drifts after that, abort before commit/tag. The bumper does **not** touch component-level frontmatter (per-skill, per-command) — those evolve independently. The bumper does **not** write CHANGELOG entries — that remains the command's responsibility.
-16. In a plugin bundle, run `node scripts/validate-distribution.mjs --native`
+14. The commit **author** must use the user's `@users.noreply.github.com` alias. Fix future commits with `git config user.email`; history repair requires `git filter-repo --mailmap` and explicit history-rewrite consent.
+15. When the user asks to **install a pre-commit secret-block hook** in a repo ("protect this repo from secret commits", "add the hook", "wire up the secrets guard"), invoke `scripts/install-hooks.sh <repo>`. The installer is preview-only — it prints the exact `cp` or `ln -s` command for the user to run. Never modify `.git/hooks/` automatically.
+16. For releases (`/release`, `/wrap-up`), use the **bump → audit** pattern: (a) preview with `scripts/bump-manifests.sh <target> --dry-run`, (b) execute `scripts/bump-manifests.sh <target>` to write the target version into every detected project-level location, (c) re-run `scripts/check-manifests.sh` and verify every reported version equals `<target>`. The post-write audit is the real release gate. If any location still drifts, offer to re-run the bumper; if it still drifts after that, abort before commit/tag. The bumper does **not** touch component-level frontmatter (per-skill, per-command) — those evolve independently. The bumper does **not** write CHANGELOG entries — that remains the command's responsibility.
+17. In a plugin bundle, run `node scripts/validate-distribution.mjs --native`
     after the version audit and before commit/tag. Static checks always run;
     installed native validators run when their CLIs are available.
+
+**Pull requests**
+18. On team projects, default to `--draft` when no reviewer is lined up yet.
+19. On team projects, never merge your own PR without at least one review.
 
 ## Delegation policy
 
@@ -131,7 +137,3 @@ for parallel work or a genuinely independent, high-volume investigation would
 otherwise flood the main context (for example, a repo-wide history audit).
 Never infer that a valid model ID is small or inexpensive. Use a runtime's
 documented low-cost model, or require the user to supply a verified model ID.
-
-**Pull requests**
-11. On team projects, default to `--draft` when no reviewer is lined up yet.
-12. On team projects, never merge your own PR without at least one review.
