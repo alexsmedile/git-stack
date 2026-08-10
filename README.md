@@ -9,7 +9,7 @@ Antigravity, and OpenCode — script-first orchestration with safe defaults.
 ![Cursor](https://img.shields.io/badge/Cursor-compatible-7c3aed)
 ![Antigravity](https://img.shields.io/badge/Antigravity-compatible-4285f4)
 ![OpenCode](https://img.shields.io/badge/OpenCode-compatible-111827)
-![Version](https://img.shields.io/badge/version-1.11.0-green)
+![Version](https://img.shields.io/badge/version-1.11.1-green)
 
 ## What's Inside
 

@@ -3,7 +3,10 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
----
+## [1.11.1] — 2026-08-10
+
+### Changed
+- `repo-prettifier`: Generalized layout, visual design, and information distribution principles (icons, grids, tables, banners, SVGs, collapsible output blocks, simulated execution transcripts). Removed rigid option labels in favor of flexible building blocks.
 
 ## [1.11.0] — 2026-08-10
 

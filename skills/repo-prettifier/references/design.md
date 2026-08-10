@@ -74,7 +74,7 @@ Offer this pattern when: the repo has 3+ sequential steps, a pipeline, or an orc
 
 ## Design Patterns to Apply
 
-These patterns are extracted from high-performing repos (Firecrawl 109k★, Fooocus, MochiDiffusion, Paperclip, APM, firecrawl-lean). Apply the ones that fit. Skip the ones that don't.
+These patterns are extracted from high-performing open-source repositories. Apply the ones that fit. Skip the ones that don't.
 
 ### Pattern 1: Strong Hero Section
 The first 10 lines decide if the visitor stays.
@@ -186,6 +186,88 @@ State what the tool is NOT for. This builds trust and filters the right users in
 - Generic copywriters looking for a fill-in-the-blank template
 - Developers who need a code library (this is prompt-based, not an API)
 ```
+
+### Pattern 11: Simulated Execution & Dialog Transcripts
+For CLI tools, workflows, or agentic skills, use a short text dialog showing exploration becoming a plan, implementation, and closure. Replaces heavy video/GIF assets with clean, scannable text.
+
+```text
+User: /explore
+System: What would you like to explore?
+User: I want dark mode but I'm not sure how to do it cleanly.
+System: Cleanest path: CSS variables + theme context. Scope it?
+User: Yes, let's do it.
+
+User: /propose add-dark-mode
+System: Created changes/add-dark-mode/
+        ✓ proposal.md  ✓ specs/  ✓ tasks.md
+
+User: /apply
+System: Implementing tasks... All complete!
+```
+
+### Pattern 12: Prompt-Assisted & Agent-Native Quick Starts
+For AI plugins, skills, or modern developer tools, lead with a simple human promise and provide direct AI prompts alongside standard terminal commands:
+
+```md
+## Quick Start
+
+**Give it to your AI:** Paste this prompt into your coding assistant:
+> Read https://example.com/install and install this project for me.
+
+**Prefer the terminal?**
+```bash
+npx skills add https://github.com/org/repo
+```
+```
+
+### Pattern 13: Multi-Platform / Multi-Environment Integration Grid
+For tools supporting multiple runtimes or environments, provide immediate top navigation links or a visual matrix mapping support across all targets.
+
+```md
+## Quickstart
+
+Get started in your environment: [Claude Code](#claude-code) · [Antigravity](#antigravity) · [Codex](#codex) · [Cursor](#cursor)
+```
+
+### Pattern 14: Tabbed Multi-Environment Code Blocks with Concrete Output
+Keep the primary language/SDK code snippet visible, while placing alternative runtimes (Node, Python, cURL, CLI) inside collapsible `<details><summary>` blocks. Always follow code samples with an explicit `Output:` block showing expected JSON or Markdown.
+
+```md
+### Search
+
+```python
+results = app.search("query", limit=5)
+```
+
+<details>
+<summary><b>Node.js / cURL / CLI</b></summary>
+
+```javascript
+await app.search("query", { limit: 5 });
+```
+</details>
+
+Output:
+```json
+[{"url": "https://example.com", "markdown": "# Content..."}]
+```
+```
+
+### Pattern 15: Theme-Aware Light/Dark Mode Visual Assets
+Support both dark and light themes for architecture diagrams, banners, and schematics using GitHub's `<picture>` media query tags:
+
+```html
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="doc/assets/architecture-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="doc/assets/architecture-light.png">
+  <img src="doc/assets/architecture-light.png" alt="Architecture Diagram">
+</picture>
+```
+
+### Pattern 16: Section Density & Length Budget
+Prevent wall-of-text fatigue before earning reader attention. If any single section or module reference exceeds ~35 lines of code or text:
+- Wrap detailed code samples in collapsible `<details><summary>` blocks
+- Or delegate heavy technical reference manuals to dedicated `docs/` files
 
 ---
 
