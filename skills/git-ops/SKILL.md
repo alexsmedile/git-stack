@@ -2,11 +2,11 @@
 name: git-ops
 description: >
   Git and GitHub work with enforced safety rules — commit, push, branch, merge,
-  rebase, PR, tag, release, repo setup, repo cleanup, or choosing a workflow.
-  Use for any git/GitHub task; it blocks secrets, bad branches, and unsafe
-  history rewrites that would otherwise slip through.
+  rebase, PR, tag, release, wrap up a session, repo setup, or choosing a
+  workflow. Use for any git/GitHub task; it blocks secrets, bad branches, and
+  unsafe history rewrites that would otherwise slip through.
 metadata:
-  version: "1.8.2"
+  version: "1.9.0"
 ---
 
 # git-ops
@@ -35,12 +35,15 @@ Resolve `<skill-directory>` to this skill's directory on runtimes that do not
 set `CLAUDE_SKILL_DIR`. Treat exit `0` as clean/done, `1` as blocked, and `2` as
 nothing to do. Read only the compact output unless a blocker needs diagnosis.
 
+`scripts/` holds generated copies of `src/scripts/` in the git-stack repository,
+distributed so each skill runs standalone. Edit the source and run
+`node src/sync-scripts.mjs`; never edit a copy.
+
 For native installation paths across Claude Code, Codex, Cursor, Antigravity,
 and OpenCode, run `node scripts/install-harness.mjs --help`. Install the skill
 alone by default. Add a runtime-native agent adapter only with `--with-agent`.
-For non-Claude harnesses that do not expose plugin commands, add all command
-workflows as local Agent Skills with `--with-command-skills`; exclude individual
-workflows with inverted flags such as `--no-release` or `--no-cleanup`.
+Harnesses without plugin commands invoke these workflows conversationally; the
+Claude slash commands are thin aliases over the same fast paths.
 For optional unnamespaced Claude aliases (`/commit`, `/push`), run
 `node scripts/install-shortcuts.mjs --help`; the plugin-native namespaced
 commands remain the authoritative source.
@@ -69,22 +72,48 @@ or a checked-out `alexsmedile/git-stack` repository.
 
 ## Common operations
 
-- **Commit**: stage only user-approved files, run `git-stack.sh commit`, draft a
-  Conventional Commit message from `git diff --cached`, then rerun with
-  `commit --execute --message "…"`. Never use `git add .`.
-- **Push**: run `git-stack.sh push`; if clean, rerun with
-  `push --execute --message "…"`. Omit `--message` when there is no staged diff.
+Every fast path below reads the script's compact output and stops on
+`VERDICT=BLOCKED`. Handle verdicts uniformly: `NOTHING_TO_DO` → report and stop;
+`BLOCKED` → show every `BLOCKER` and `WARNING` line once, then ask how to
+resolve; `CLEAN` → proceed to the `--execute` pass. Never pass `--allow-main` or
+`--allow-large` unless the user explicitly overrides that specific policy, and
+never stage files the user did not approve (`git add .` is never correct).
+
+- **Commit**: run `git-stack.sh commit`. On `CLEAN`, use the user's message
+  verbatim when given, otherwise inspect only `git diff --cached` and draft an
+  imperative Conventional Commit subject of at most 72 characters. Rerun with
+  `commit --execute --message "…"`. Report the commit, warnings, and remaining
+  unstaged/untracked counts. Do not push.
+- **Push**: run `git-stack.sh push`. If `STAGED` is nonzero, draft or reuse a
+  message as above and rerun with `push --execute --message "…"`; when
+  `STAGED=0`, omit `--message`. Report the commit/push destination, warnings,
+  and leftover counts. Never force-push.
 - **Tag**: run `git-stack.sh tag --version X.Y.Z`; if clean, rerun with
   `tag --version X.Y.Z --execute`. Tags are annotated and pushed to `origin`.
-- **Release**: determine the version; update CHANGELOG; run
-  `bump-manifests.sh X.Y.Z` then `check-manifests.sh`; commit and push through
-  `git-stack.sh`; run `validate-distribution.mjs --native` for plugin bundles;
-  finally execute the tag fast path. Read `references/workflows.md` only when
-  release/version decisions are ambiguous.
+- **Changelog**: for changelog or documentation writing, use the `update-docs`
+  skill — it owns CHANGELOG entries and doc patches. Use `git-stack.sh scan` to
+  report commit shape since the last tag without writing anything.
+- **Release**: resolve the version from the user or infer it from the latest tag
+  and commit subjects, asking once only if ambiguous. Then:
+  1. `git-stack.sh tag --version X.Y.Z` to require a clean tree on the default branch
+  2. promote `[Unreleased]` in `CHANGELOG.md`, or draft a dated entry via `update-docs`
+  3. `bump-manifests.sh X.Y.Z --dry-run`, then `bump-manifests.sh X.Y.Z`, then `check-manifests.sh`
+  4. `validate-distribution.mjs --native` for plugin bundles — stop if any validator fails
+  5. stage only the changelog and changed manifests; commit and push through
+     `git-stack.sh` with `chore: release vX.Y.Z`
+  6. re-run the tag check, then `tag --version X.Y.Z --execute`
 
-Stop once and ask the user when output contains `VERDICT=BLOCKED`. Never pass
-`--allow-main` or `--allow-large` unless the user explicitly overrides that
-specific policy.
+  Report version, commit, tag, remote, manifest count, and validator results.
+  Re-run the bumper once on drift; stop if the audit still fails. Read
+  `references/workflows.md` only when release, release-branch, CI, or GitHub
+  Release decisions are ambiguous.
+- **Wrap up a session**: run the push fast path and report the saved
+  commit/push. Do not ask whether to tag — the user can request a release. When
+  a version is supplied, run the release sequence for that exact version
+  instead.
+
+For repo cleanup, branch pruning, and `.git` space reclaim, use the
+`repo-hygiene` skill rather than hand-rolled git commands.
 
 ## References
 
@@ -96,7 +125,9 @@ Read only the file needed for non-routine work.
 | `github` | PR, review, issues, repo setup, releases, CI | `references/github.md` | anything touching GitHub |
 | `workflows` | feature, bugfix, refactor, release, hotfix sequences | `references/workflows.md` | multi-step task |
 | `decisions` | when to use what, risk table, situation → action map | `references/decisions.md` | user needs guidance on approach |
-| `cleanup` | repo hygiene, dead/stale/unsynced branches, gc, big-blob purge | `references/cleanup.md` | cleaning up a repo or reclaiming space |
+
+Repo hygiene lives in the separate `repo-hygiene` skill; documentation and
+changelog writing live in `update-docs`.
 
 ## Safety rules
 

@@ -9,7 +9,7 @@ Antigravity, and OpenCode — script-first orchestration with safe defaults.
 ![Cursor](https://img.shields.io/badge/Cursor-compatible-7c3aed)
 ![Antigravity](https://img.shields.io/badge/Antigravity-compatible-4285f4)
 ![OpenCode](https://img.shields.io/badge/OpenCode-compatible-111827)
-![Version](https://img.shields.io/badge/version-1.11.1-green)
+![Version](https://img.shields.io/badge/version-1.12.0-green)
 
 ## What's Inside
 
@@ -97,25 +97,33 @@ node skills/git-ops/scripts/install-harness.mjs opencode --scope global
 Project scope is the default and installs into the current repository. Use
 `--dry-run` to preview. Routine Git operations need only the skill.
 
-### Command skills for non-Claude harnesses
+### Scripts
 
-Harnesses without native plugin commands can install all seven workflows as
-local Agent Skills from the same command catalog:
+`src/scripts/` is the source of truth for every script in the bundle. Skills are
+self-contained, so the scripts each one needs are copied into
+`skills/<name>/scripts/` by the sync tool:
 
 ```bash
-node skills/git-ops/scripts/install-harness.mjs codex \
-  --scope project --with-command-skills
+node src/sync-scripts.mjs           # distribute
+node src/sync-scripts.mjs --check   # fail if a copy has drifted
 ```
 
-This creates `.agents/skills/commit/SKILL.md`, `push/SKILL.md`,
-`release/SKILL.md`, `changelog/SKILL.md`, `update-docs/SKILL.md`,
-`wrap-up/SKILL.md`, and `cleanup/SKILL.md`. Exclude workflows with inverted
-flags such as `--no-release` or `--no-cleanup`; use `--scope global` for a
-user-wide install. Generated skills are collision-safe and tracked by
-`.git-stack-command-skills.json`. Use `--uninstall-command-skills` to remove
-only generated command skills. Run this adapter from the full `git-stack`
-checkout; a skill-only install intentionally does not contain the command
-catalog sources.
+Edit `src/scripts/` and re-sync; generated copies carry a banner and are
+overwritten. `repo-hygiene` and `update-docs` receive only `git-stack.sh`, since
+they call just the read-only `cleanup` and `scan` subcommands.
+
+### Non-Claude harnesses
+
+The installer places all four skills (`git-ops`, `repo-hygiene`, `update-docs`,
+`repo-prettifier`) into the harness's skill root:
+
+```bash
+node skills/git-ops/scripts/install-harness.mjs codex --scope project
+```
+
+Harnesses without native plugin commands invoke these conversationally — ask for
+a commit, a release, or a repo cleanup and the matching skill loads. Use
+`--scope global` for a user-wide install.
 
 Optional native agent adapters are available when a separate context is truly
 useful:
@@ -273,7 +281,7 @@ counts rather than raw branch and stash listings; names are fetched only for
 categories you choose to act on. Report-first and read-only by default;
 `--deep` runs safe `gc`/`prune`, and any history rewrite stays behind an
 explicit warning. Checks and severity tiers live in
-`git-ops/references/cleanup.md`.
+`repo-hygiene/references/tiers.md`.
 
 ## Safety Rules
 

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/install-hooks.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 # install-hooks.sh — print install instructions for the secret-block hook.
 #
 # Does NOT modify anything. Detects the current repo's .git/hooks/ location

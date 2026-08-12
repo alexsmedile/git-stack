@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// GENERATED COPY — source of truth: src/scripts/install-shortcuts.mjs
-// Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 
 /**
  * Install optional short Claude Code command aliases.

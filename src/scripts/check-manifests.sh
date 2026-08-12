@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/check-manifests.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 # check-manifests.sh — Audit version fields in a repo.
 #
 # Step 1: Detect which ecosystems/conventions this repo uses (by marker files).

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/check-author-email.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 # check-author-email.sh — Guard against committing/pushing with the wrong identity.
 #
 # Warns when the author OR committer email on the commits under inspection is:

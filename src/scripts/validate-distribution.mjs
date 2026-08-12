@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// GENERATED COPY — source of truth: src/scripts/validate-distribution.mjs
-// Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

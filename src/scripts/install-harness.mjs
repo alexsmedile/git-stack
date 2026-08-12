@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-// GENERATED COPY — source of truth: src/scripts/install-harness.mjs
-// Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 
 import fs from "node:fs";
 import os from "node:os";

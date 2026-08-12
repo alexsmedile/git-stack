@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/pre-commit-block-secrets.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 # pre-commit-block-secrets.sh — block commits containing known secret patterns.
 #
 # Reusable hook. Drop into .git/hooks/pre-commit (or symlink) and `chmod +x`.

@@ -120,26 +120,25 @@ npx skills add alexsmedile/git-stack
 node skills/git-ops/scripts/install-harness.mjs opencode --scope global
 ```
 
-### Command skills on non-Claude harnesses
+### Script sync
 
-Codex, Cursor, Antigravity, and OpenCode can opt into generated command skills
-from the shared command catalog:
+Run `node src/sync-scripts.mjs --check` before any release. `src/scripts/` is
+authoritative; `skills/*/scripts/` are generated copies that let each skill run
+standalone. A drifted copy fails the check and must be resolved by editing the
+source and re-syncing, never by editing the copy.
+
+### Skills on non-Claude harnesses
+
+Codex, Cursor, Antigravity, and OpenCode receive all four skills (`git-ops`,
+`repo-hygiene`, `update-docs`, `repo-prettifier`) from a single install:
 
 ```bash
-node skills/git-ops/scripts/install-harness.mjs codex \
-  --scope project --with-command-skills
+node skills/git-ops/scripts/install-harness.mjs codex --scope project
 ```
 
-All catalog commands are installed by default (`commit`, `push`, `release`,
-`changelog`, `update-docs`, `wrap-up`, and `cleanup`). Exclude individual
-workflows with inverted flags such as `--no-release`; use `--scope global` for
-the harness's user-level skill root. Generated adapters live beside the core
-`git-ops` skill and are recorded in `.git-stack-command-skills.json`. Remove
-only the generated adapters with `--uninstall-command-skills`. Verify an
-existing generated set with `generate-command-skills.mjs --check`.
-Command-skill generation requires the full repository checkout because the
-catalog points to the canonical command bodies; skill-only installs remain
-portable core installs.
+Use `--scope global` for the harness's user-level skill root. These harnesses
+have no plugin-command surface, so the workflows are invoked conversationally
+rather than as slash commands.
 
 An optional OpenCode runner requires an explicit provider-qualified model:
 

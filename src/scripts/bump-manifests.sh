@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/bump-manifests.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 # bump-manifests.sh — Write a target version into every project-level manifest
 # this repo uses. Mirrors the detection logic of check-manifests.sh.
 #

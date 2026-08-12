@@ -3,6 +3,47 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [1.12.0] — 2026-08-13
+
+### Breaking
+- Commands are no longer portable adapters. `specs/commands/index.json` and
+  `skills/git-ops/scripts/generate-command-skills.mjs` are removed, along with
+  the `--with-command-skills`, `--uninstall-command-skills`, and `--no-<command>`
+  flags on `install-harness.mjs`. Non-Claude harnesses now receive the skills
+  themselves and invoke the workflows conversationally.
+- Scripts moved to `src/scripts/` as the single source of truth. Paths under
+  `skills/*/scripts/` are now generated copies; edit the source and run
+  `node src/sync-scripts.mjs`.
+
+### Added
+- `repo-hygiene` skill — repo cleanup and space reclaim in three tiers, from the
+  former `/cleanup` command plus the tiers previously in
+  `git-ops/references/cleanup.md` (now `repo-hygiene/references/tiers.md`).
+- `update-docs` skill — CHANGELOG entries plus README, `STATUS.md`,
+  AGENTS/CLAUDE/GEMINI, and `docs/` patches. Absorbs the former `/changelog`
+  command. Never commits, pushes, or tags.
+- `src/sync-scripts.mjs` — distributes canonical scripts into each skill that
+  needs them, so every skill runs standalone. `--check` fails on drift and is a
+  release gate.
+
+### Changed
+- `git-ops` (1.9.0) absorbed the commit, push, release, wrap-up, and changelog
+  workflows as script-first fast paths. Repo hygiene and documentation moved out
+  to their own skills.
+- The seven Claude slash commands are now thin pointers into the skills, down
+  from roughly 600 lines to 76. Procedure lives in the skills; commands carry
+  none of their own.
+- Every `SKILL.md` uses only the six fields the Agent Skills spec allows
+  (`name`, `description`, `allowed-tools`, `metadata`, `license`,
+  `compatibility`), so all four skills package and upload without error.
+- `install-harness.mjs` installs all four skills instead of `git-ops` alone.
+- Scripts locate the repository root by searching upward for
+  `.claude-plugin/plugin.json` rather than a fixed relative hop, so the same
+  file works from `src/scripts/` and from any installed copy.
+- Superseded `SKILL.md` snapshots moved from `skills/<name>/versions/` to
+  `_archive/versions/<skill>/`. Skill folders now ship only what a runtime loads
+  — `SKILL.md`, `references/`, and `scripts/`.
+
 ## [1.11.1] — 2026-08-10
 
 ### Changed

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# GENERATED COPY — source of truth: src/scripts/git-stack.sh
-# Edit the source and run `node src/sync-scripts.mjs`. Do not edit here.
 set -u
 
 # Compact, cross-runtime Git safety runner. It intentionally prints summaries,
