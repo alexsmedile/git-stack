@@ -1,7 +1,7 @@
 {
   "name": "git-stack",
   "displayName": "git-stack",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "Portable, script-first Git and GitHub workflows with compact safety checks.",
   "author": {
     "name": "Alessandro Smedile"

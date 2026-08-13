@@ -6,7 +6,7 @@ description: >
   workflow. Use for any git/GitHub task; it blocks secrets, bad branches, and
   unsafe history rewrites that would otherwise slip through.
 metadata:
-  version: "1.9.0"
+  version: "1.10.0"
 ---
 
 # git-ops
