@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Portable, script-first Git and GitHub workflows with compact safety checks.",
-    "version": "1.13.0"
+    "version": "1.13.1"
   },
   "plugins": [
     {
