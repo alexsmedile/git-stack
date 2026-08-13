@@ -107,11 +107,21 @@ if [[ "$OP" == cleanup ]]; then
   printf 'OP=cleanup\nDEFAULT_BRANCH=%s\nBRANCHES_MERGED=%s\nBRANCHES_STALE=%s\nBRANCHES_UNSYNCED=%s\nBRANCHES_GONE=%s\nSTASHES=%s\nOLDEST_STASH=%s\nPACKED_SIZE=%s\nLOOSE_SIZE=%s\nLOOSE_OBJECTS=%s\nTRACKED_JUNK=%s\nSTALE_DAYS=%s\n' \
     "$default_branch" "$merged" "$stale" "$unsynced" "${gone:-0}" "$stashes" "${oldest_stash:-none}" "${size:-unknown}" "${loose_size:-unknown}" "${loose:-0}" "${junk:-0}" "$STALE_DAYS"
 
-  if ((merged + stale + unsynced + stashes + junk + ${loose:-0} > 0)); then
+  # The verdict covers only what needs a human decision: which branch to delete,
+  # whether a stash is still wanted, whether junk should be untracked. Loose
+  # objects are deliberately excluded — git creates them on every commit and
+  # packs them during routine `gc`, so counting them made DIRTY fire on any
+  # repo touched since its last repack. A verdict that is always DIRTY gets
+  # ignored, which is how a real forgotten stash slips past.
+  if ((merged + stale + unsynced + stashes + junk > 0)); then
     printf 'VERDICT=DIRTY\n'
   else
     printf 'VERDICT=CLEAN\n'
   fi
+
+  # Loose objects are a maintenance hint (tier 2), not repo dirt. Report them
+  # separately so `gc` can still be suggested against a CLEAN verdict.
+  ((${loose:-0} > 500)) && printf 'SUGGEST=gc\n'
   exit 0
 fi
 

@@ -3,6 +3,21 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [1.13.1] — 2026-08-13
+
+### Fixed
+- `git-stack.sh cleanup` no longer counts loose objects toward `VERDICT`. Git
+  creates loose objects on every commit and packs them during routine `gc`, so
+  including them made `VERDICT=DIRTY` fire on any repo touched since its last
+  repack — even one with no branches, stashes, or junk to clean. A verdict that
+  is effectively always DIRTY gets ignored, which is how a real forgotten stash
+  slips past. `VERDICT` now reflects only what needs a human decision.
+
+### Added
+- `SUGGEST=gc` in the `cleanup` report, emitted above 500 loose objects. Loose
+  objects are a tier-2 maintenance hint rather than repo dirt, so this can
+  accompany `VERDICT=CLEAN`. `LOOSE_OBJECTS` and `LOOSE_SIZE` are unchanged.
+
 ## [1.13.0] — 2026-08-13
 
 ### Added
