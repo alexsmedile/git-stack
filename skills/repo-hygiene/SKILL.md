@@ -8,7 +8,7 @@ description: >
   rewrites stay behind an explicit destructive-action gate.
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # repo-hygiene
@@ -49,8 +49,16 @@ set `CLAUDE_SKILL_DIR`; in a Claude plugin install, use
 
 Keys: `BRANCHES_MERGED`, `BRANCHES_STALE`, `BRANCHES_UNSYNCED`, `BRANCHES_GONE`,
 `STASHES`, `OLDEST_STASH`, `PACKED_SIZE`, `LOOSE_SIZE`, `LOOSE_OBJECTS`,
-`TRACKED_JUNK`. `BLOCKER=not-a-git-repository` → stop. `VERDICT=CLEAN` → say so
-and stop.
+`TRACKED_JUNK`. `BLOCKER=not-a-git-repository` → stop.
+
+`VERDICT` reflects only what needs a human decision — branches, stashes, tracked
+junk. It deliberately ignores loose objects, which git creates on every commit
+and packs on its own schedule. `VERDICT=CLEAN` → say so and stop, **unless**
+`SUGGEST=gc` is also present.
+
+`SUGGEST=gc` (emitted above 500 loose objects) is a tier-2 maintenance hint, not
+dirt: offer `git gc`, but do not describe the repo as needing cleanup on its
+account. It can accompany either verdict.
 
 Tune the stale window with `--stale-days <n>` (default 90).
 
