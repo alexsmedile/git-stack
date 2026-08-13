@@ -1,0 +1,31 @@
+# gitleaks configuration for git-stack
+#
+# Extends the default ruleset rather than replacing it, so every built-in
+# detector stays active. Only the entries below are exempted.
+#
+# git-stack ships a secret scanner, so its own sources necessarily contain
+# example and fixture values that look like credentials. Those are documentation,
+# not secrets. Allowlist them narrowly — by rule, path, and literal value — never
+# by disabling a rule outright.
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "stripe-access-token"
+description = "Stripe access token"
+regex = '''(?i)\b(sk|rk)_(test|live|prod)_[a-zA-Z0-9]{10,99}\b'''
+keywords = ["sk_test", "sk_live", "sk_prod", "rk_test", "rk_live", "rk_prod"]
+
+  [rules.allowlist]
+  description = "Documentation placeholder in the scanner's own comments"
+  regexTarget = "match"
+  regexes = ['''sk_test_placeholder''']
+  paths = ['''(src|skills/[^/]+)/scripts/secret-patterns\.sh''']
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  # Superseded copies — not part of the distributed bundle.
+  '''_archive/''',
+]

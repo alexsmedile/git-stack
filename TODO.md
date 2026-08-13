@@ -81,3 +81,30 @@
   ```yaml
   kind: feat
   ```
+
+- [ ] Optional pre-commit hook for version drift ~backlog
+  > `check-manifests.sh` catches version drift, but only when someone remembers to
+  > run it. During the 1.12.0 release the CHANGELOG was still on 1.11.1 and only
+  > surfaced mid-release. A pre-commit hook would make the check automatic.
+  >
+  > Not urgent — nothing is broken. `validate-distribution.mjs --native` already
+  > blocks tagging on drift, and manifest alignment only truly matters at release
+  > time.
+  >
+  > If done, extend the existing `install-hooks.sh` to optionally chain
+  > `check-manifests.sh` — do **not** adopt skizl's `git-guard`, which was
+  > evaluated and rejected for three reasons:
+  > - it looks for `CHANGELOG.md` at the repo root; ours is `docs/CHANGELOG.md`,
+  >   so that source would be silently skipped
+  > - it has no project-level vs component-level distinction, so its `skill_check`
+  >   is all-or-nothing; our four skills are deliberately versioned independently
+  >   (1.9.0 / 1.0.0 / 2.0.0 / 1.1.0) and "all" would block every commit until they
+  >   were flattened
+  > - it sets `core.hooksPath`, which redirects hook lookup away from `.git/hooks/`
+  >   and could orphan a secrets hook installed via `install-hooks.sh`
+  >
+  > Keep it preview-only per git-ops safety rule #15 — never install a hook
+  > automatically.
+  ```yaml
+  kind: feat
+  ```
