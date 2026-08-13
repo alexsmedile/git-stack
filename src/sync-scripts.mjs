@@ -18,9 +18,12 @@ const source = path.join(root, "src/scripts");
 // Which scripts each skill needs. git-ops runs the write operations and so
 // needs the full set; repo-hygiene and update-docs call only the read-only
 // `cleanup` and `scan` subcommands, which never invoke the sibling checkers.
+// secret-patterns.sh is sourced unconditionally by git-stack.sh, so every skill
+// that ships git-stack.sh must ship it too — including the read-only ones.
 const distribution = {
   "git-ops": [
     "git-stack.sh",
+    "secret-patterns.sh",
     "check-author-email.sh",
     "check-manifests.sh",
     "bump-manifests.sh",
@@ -30,8 +33,8 @@ const distribution = {
     "install-shortcuts.mjs",
     "validate-distribution.mjs",
   ],
-  "repo-hygiene": ["git-stack.sh"],
-  "update-docs": ["git-stack.sh"],
+  "repo-hygiene": ["git-stack.sh", "secret-patterns.sh"],
+  "update-docs": ["git-stack.sh", "secret-patterns.sh"],
 };
 
 function banner(name, comment) {

@@ -5,6 +5,12 @@ set -u
 # not raw diffs or command logs, so agents can call it without polluting context.
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+
+# Shared secret regex + optional gitleaks escalation. Sourced rather than
+# duplicated: the pattern previously lived in two files and drifted unnoticed.
+# shellcheck source=secret-patterns.sh
+. "$SCRIPT_DIR/secret-patterns.sh"
+
 OP=${1:-}
 shift 2>/dev/null || true
 
@@ -157,10 +163,20 @@ if [[ "$OP" == commit || "$OP" == push ]]; then
     fi
 
     added_lines=$(git diff --cached --no-ext-diff --unified=0 2>/dev/null | awk '/^\+\+\+/{next} /^\+/{print}' || true)
-    secret_re='(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
-    if printf '%s\n' "$added_lines" | grep -Eq "$secret_re"; then
+    if printf '%s\n' "$added_lines" | grep -Eq "$GIT_STACK_SECRET_RE"; then
       add_blocker staged-secret-pattern
     fi
+
+    # Escalate to gitleaks when it is installed. The regex above is the floor,
+    # not the ceiling: it only matches known vendor prefixes. gitleaks adds
+    # entropy detection and ~170 rules. Never a hard dependency — an absent
+    # scanner produces a hint, not a blocker.
+    gitleaks_scan >/dev/null
+    case $? in
+      1) add_blocker gitleaks-detected-secret ;;
+      2) add_warning "$GIT_STACK_GITLEAKS_HINT" ;;
+      3) add_warning gitleaks-error-skipped ;;
+    esac
     if printf '%s\n' "$added_lines" | grep -Eq '(/Users/[A-Za-z0-9._-]+/|/home/[A-Za-z0-9._-]+/)'; then
       add_blocker staged-absolute-user-path
     fi

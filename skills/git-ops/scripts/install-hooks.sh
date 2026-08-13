@@ -39,6 +39,11 @@ esac
 
 HOOK_DEST="$ABS_GITDIR/hooks/pre-commit"
 
+# The hook sources secret-patterns.sh for its pattern list. A copy-install must
+# place both files side by side or the hook fails closed on every commit.
+PATTERNS_SRC="$(dirname "$HOOK_SRC")/secret-patterns.sh"
+PATTERNS_DEST="$ABS_GITDIR/hooks/secret-patterns.sh"
+
 # Color helpers
 if [ -t 1 ]; then
   bold() { printf '\033[1m%s\033[0m' "$1"; }
@@ -67,6 +72,13 @@ if [ ! -r "$HOOK_SRC" ]; then
   exit 1
 fi
 
+if [ ! -r "$PATTERNS_SRC" ]; then
+  yel "  ⚠ secret-patterns.sh not found next to the hook source."; echo
+  echo "    Expected: $PATTERNS_SRC"
+  echo "    Run 'node src/sync-scripts.mjs' in the git-stack repo to restore it."
+  exit 1
+fi
+
 # Dest already exists?
 if [ -e "$HOOK_DEST" ]; then
   if [ -L "$HOOK_DEST" ]; then
@@ -80,10 +92,15 @@ fi
 
 echo "  $(bold "To install (copy approach — survives upgrades, snapshot in repo):")"
 echo "    cp '$HOOK_SRC' '$HOOK_DEST'"
+echo "    cp '$PATTERNS_SRC' '$PATTERNS_DEST'"
 echo "    chmod +x '$HOOK_DEST'"
 echo
 echo "  $(bold "To install (symlink approach — auto-updates when git-ops updates):")"
 echo "    ln -sf '$HOOK_SRC' '$HOOK_DEST'"
+echo
+echo "  $(dim "Both approaches need secret-patterns.sh: the hook sources it for the")"
+echo "  $(dim "pattern list. The symlink approach resolves it from the skill dir")"
+echo "  $(dim "automatically; the copy approach needs the second cp above.")"
 echo
 echo "  $(dim "Note: .git/hooks/ is NOT versioned by git. Other clones will not")"
 echo "  $(dim "      get the hook automatically — they must run this installer too.")"
