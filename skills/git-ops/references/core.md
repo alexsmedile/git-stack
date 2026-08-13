@@ -57,9 +57,30 @@ bash "${CLAUDE_SKILL_DIR}/scripts/install-hooks.sh" /path/to/repo
 Options are copy (frozen script) or symlink (dynamic updates).
 
 ### Repo-wide secret audit (on request)
-Scan currently tracked files, env/config files, and git history:
+
+**Prefer gitleaks when it is installed** — it scans full history in one pass
+with ~170 rules plus entropy detection, catching secrets the built-in prefix
+patterns cannot (bare high-entropy values, embedded DB credentials, unprefixed
+vendor tokens):
+
 ```bash
-SECRET_RE='(sk-proj-[A-Za-z0-9_-]{40,}|sk-ant-[a-z0-9-]+-[A-Za-z0-9_-]{40,}|sk-[A-Za-z0-9]{40,}|jina_[A-Za-z0-9]{40,}|tvly-(dev-|prod-)?[A-Za-z0-9_-]{20,}|apify_api_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|AIza[A-Za-z0-9_-]{30,}|xoxb-[A-Za-z0-9-]{20,}|hf_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----)'
+gitleaks detect --redact -v          # full history
+gitleaks detect --redact -v --log-opts="-n 50"   # recent history only, faster
+```
+
+Not installed: `brew install gitleaks`. If the user declines, or gitleaks is
+unavailable, fall back to the built-in patterns below.
+
+For a public-launch audit where *verifying* whether a key is still live matters
+more than speed, `trufflehog git file://. --results=verified` reports only
+secrets that authenticate successfully. It is slower and makes network calls to
+third-party APIs, so it is a deliberate pre-publication check, not a routine one.
+
+Fallback — built-in patterns. Source the shared definition rather than pasting
+the regex, so this audit stays in step with the commit-time scan:
+```bash
+. "${CLAUDE_SKILL_DIR}/scripts/secret-patterns.sh"
+SECRET_RE="$GIT_STACK_SECRET_RE"
 
 # 1. Currently tracked files
 git ls-files -z | xargs -0 grep -nHE "$SECRET_RE" 2>/dev/null

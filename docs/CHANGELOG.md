@@ -3,6 +3,33 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [Unreleased]
+
+### Added
+- Optional `gitleaks` escalation for secret scanning. When `gitleaks` is on
+  PATH, `git-stack.sh` and the pre-commit hook run it as a second pass over the
+  staged diff, adding ~170 rules and entropy detection on top of the built-in
+  prefix patterns. It is never a dependency: when absent, both emit a one-line
+  install hint and the built-in patterns still run.
+- `src/scripts/secret-patterns.sh` — the secret regex, now defined once and
+  sourced by `git-stack.sh`, `pre-commit-block-secrets.sh`, and the audit in
+  `git-ops/references/core.md`. The pattern previously existed as three
+  verbatim copies with nothing keeping them in step.
+- Repo-wide secret audit now prefers `gitleaks detect` for full history, and
+  documents `trufflehog --results=verified` as a pre-publication check where
+  confirming a key is live matters more than speed.
+
+### Fixed
+- **The pre-commit hook failed open.** Git invokes hooks with `$0` pointing at
+  `.git/hooks/`, so the hook could not locate its own directory; combined with
+  `set -u` without `-e`, a failed source printed errors and then exited 0,
+  letting every commit through unchecked. The hook now resolves symlinks to
+  find its real install location and **fails closed** — if the pattern file
+  cannot be loaded it blocks the commit and says why.
+- `install-hooks.sh` copy-install now also copies `secret-patterns.sh`, which
+  the hook sources. Copy-installing only the hook left it unable to load its
+  patterns.
+
 ## [1.12.0] — 2026-08-13
 
 ### Breaking
