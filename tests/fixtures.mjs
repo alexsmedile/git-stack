@@ -138,3 +138,131 @@ export function createHygieneRepo() {
 
   return repo;
 }
+
+// --- Hard/adversarial fixtures ------------------------------------------------
+
+export function createDetachedHeadRepo() {
+  const repo = createTempRepo();
+  repo.run("git checkout --detach HEAD");
+  return repo;
+}
+
+export function createUnbornRepo() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "git-op-unborn-"));
+  execSync("git init -b main", { cwd: dir, encoding: "utf8" });
+  return {
+    dir,
+    cleanup: () => {
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {}
+    },
+    run: (cmd) => run(cmd, dir),
+  };
+}
+
+export function createInterruptedMergeRepo() {
+  const repo = createTempRepo();
+  const { dir, run } = repo;
+
+  run("git checkout -b feat/side");
+  fs.writeFileSync(path.join(dir, "conflict.txt"), "side version\n");
+  run("git add conflict.txt");
+  run("git commit -m 'feat: side edit'");
+  run("git checkout main");
+  fs.writeFileSync(path.join(dir, "conflict.txt"), "main version\n");
+  run("git add conflict.txt");
+  run("git commit -m 'feat: main edit'");
+  // Merge that conflicts and is left unresolved.
+  try {
+    execSync("git merge feat/side", { cwd: dir, encoding: "utf8", stdio: "pipe" });
+  } catch {
+    // expected conflict
+  }
+  return repo;
+}
+
+export function createInterruptedRebaseRepo() {
+  const repo = createTempRepo();
+  const { dir, run } = repo;
+
+  run("git checkout -b feat/rebase-me");
+  fs.writeFileSync(path.join(dir, "conflict.txt"), "branch version\n");
+  run("git add conflict.txt");
+  run("git commit -m 'feat: branch edit'");
+  run("git checkout main");
+  fs.writeFileSync(path.join(dir, "conflict.txt"), "main version\n");
+  run("git add conflict.txt");
+  run("git commit -m 'feat: main edit'");
+  run("git checkout feat/rebase-me");
+  try {
+    execSync("git rebase main", { cwd: dir, encoding: "utf8", stdio: "pipe" });
+  } catch {
+    // expected conflict stops the rebase
+  }
+  return repo;
+}
+
+export function createFakeUpstreamRepo() {
+  // Local-only "remote": a second ref pretending to be origin/main so
+  // ahead/behind math runs without any network.
+  const repo = createTempRepo();
+  const { dir, run } = repo;
+
+  // alt shares history with main but has one commit main lacks (behind=1)
+  run("git checkout -b alt HEAD~0");
+  fs.writeFileSync(path.join(dir, "remote-only.txt"), "on remote\n");
+  run("git add remote-only.txt");
+  run("git commit -m 'feat: exists only on remote'");
+  const altSha = execSync("git rev-parse alt", { cwd: dir, encoding: "utf8" }).trim();
+  run(`git update-ref refs/remotes/origin/main ${altSha}`);
+  // Wire the upstream through config directly: --set-upstream-to demands a
+  // real remote-tracking ref lookup, which a fabricated ref does not satisfy.
+  run("git remote add origin ./fake-origin.git");
+  run("git checkout main");
+  fs.writeFileSync(path.join(dir, "local-only.txt"), "local\n");
+  run("git add local-only.txt");
+  run("git commit -m 'feat: local only'");
+  run("git config branch.main.remote origin");
+  run("git config branch.main.merge refs/heads/main");
+
+  repo.cleanupOriginal = repo.cleanup;
+  repo.cleanup = () => {
+    repo.cleanupOriginal();
+  };
+  return repo;
+}
+
+export function createMultiOverlapRepo() {
+  const repo = createTempRepo();
+  const { dir, run } = repo;
+
+  // Two branches, both carrying distinct unmerged commits touching shared.txt
+  run("git checkout -b feat/overlap-a");
+  fs.writeFileSync(path.join(dir, "shared.txt"), "A\n");
+  run("git add shared.txt");
+  run("git commit -m 'feat: A touches shared'");
+  run("git checkout main");
+  run("git checkout -b feat/overlap-b");
+  fs.appendFileSync(path.join(dir, "shared.txt"), "B\n");
+  fs.writeFileSync(path.join(dir, "base.txt"), "base\n");
+  run("git add shared.txt base.txt");
+  run("git commit -m 'feat: B touches shared'");
+  run("git checkout main");
+  return repo;
+}
+
+export function createMergedOverlapRepo() {
+  const repo = createTempRepo();
+  const { dir, run } = repo;
+
+  // Branch whose commits are fully merged: must NOT count as overlap.
+  run("git checkout -b feat/already-merged");
+  fs.writeFileSync(path.join(dir, "shared.txt"), "merged content\n");
+  run("git add shared.txt");
+  run("git commit -m 'feat: will be merged'");
+  run("git checkout main");
+  run("git merge --ff-only feat/already-merged");
+  run("git branch -d feat/already-merged");
+  return repo;
+}
