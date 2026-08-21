@@ -143,18 +143,20 @@ if [[ "$OP" == state ]]; then
   done < <(git worktree list --porcelain 2>/dev/null)
 
   target_index=0
-  for target in "${PATH_ARGS[@]}"; do
-    [[ -n "$target" ]] || continue
-    target_index=$((target_index + 1))
-    exists=no
-    [[ -e "$target" || -L "$target" ]] && exists=yes
-    tracked=no
-    git ls-files --error-unmatch -- "$target" >/dev/null 2>&1 && tracked=yes
-    dirty=no
-    [[ -n "$(git status --porcelain -- "$target" 2>/dev/null)" ]] && dirty=yes
-    printf 'TARGET_%s_PATH=%q\nTARGET_%s_EXISTS=%s\nTARGET_%s_TRACKED=%s\nTARGET_%s_DIRTY=%s\n' \
-      "$target_index" "$target" "$target_index" "$exists" "$target_index" "$tracked" "$target_index" "$dirty"
-  done
+  if ((${#PATH_ARGS[@]})); then
+    for target in "${PATH_ARGS[@]}"; do
+      [[ -n "$target" ]] || continue
+      target_index=$((target_index + 1))
+      exists=no
+      [[ -e "$target" || -L "$target" ]] && exists=yes
+      tracked=no
+      git ls-files --error-unmatch -- "$target" >/dev/null 2>&1 && tracked=yes
+      dirty=no
+      [[ -n "$(git status --porcelain -- "$target" 2>/dev/null)" ]] && dirty=yes
+      printf 'TARGET_%s_PATH=%q\nTARGET_%s_EXISTS=%s\nTARGET_%s_TRACKED=%s\nTARGET_%s_DIRTY=%s\n' \
+        "$target_index" "$target" "$target_index" "$exists" "$target_index" "$tracked" "$target_index" "$dirty"
+    done
+  fi
   printf 'TARGETS=%s\nVERDICT=OBSERVED\n' "$target_index"
   exit 0
 fi

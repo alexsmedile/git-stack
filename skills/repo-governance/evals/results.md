@@ -52,3 +52,15 @@ structural boundary produced a fact/risk/recovery/yes-no authorization question.
 The repaired cold runs cover every workstream and history variant named by M1.
 No expected route was exposed to the evaluators, and the second run resolved the
 only observed authorization miss.
+
+## Helper regression checks
+
+- macOS Bash 3.2, no `--path`: emits `TARGETS=0` and `VERDICT=OBSERVED` with
+  exit 0.
+- macOS Bash 3.2, one existing and one absent `--path`: emits indexed existence,
+  tracking, and dirty facts followed by `TARGETS=2` and `VERDICT=OBSERVED`.
+- Non-repository working directory: emits `BLOCKER=not-a-git-repository` and
+  exits 1 without mutation.
+- Default branch provenance is always emitted as `remote-head`,
+  `current-conventional`, or `heuristic-main`; the fallback is never presented
+  without its source.

@@ -93,6 +93,11 @@ worktree; return one safe next action or a narrow authorization question.
   `history_fixture_rerun` passed all eight history/profile variants including
   protected, release-bound, occupied/diverged, and unknown evidence. Results are
   retained in `skills/repo-governance/evals/results.md`.
+- Final portability repair: the independent reviewer reproduced an empty-array
+  crash in the documented no-target `state` call under macOS Bash 3.2. The
+  target loop is now length-guarded; no-target, target-present, non-repository,
+  and default-branch-source cases are retained as regression evidence. This is
+  repair 2 of the frozen budget 2.
 
 ### Verified dispositions
 
