@@ -3,6 +3,18 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [1.14.0] — 2026-08-21
+
+### Added
+- `repo-governance` skill (`v0.3.0`) — universal routing, progressive orientation, workstream selection, history classification (`PRIVATE`, `PUBLISHED_SOLO`, `SHARED`, `UNKNOWN`), and recovery flight director.
+- `repo-guardrails` skill (`v0.1.0`) — operation guards, repository posture audits, proposal generation, and verified policy enforcement across `SOLO`, `TEAM`, and `PRODUCTION` profiles.
+- Automated hermetic test suite and adversarial fixtures (`tests/test-suite.mjs`, `tests/hard-suite.mjs`) with 42 passing test scenarios.
+- Mechanical helper subcommands in `git-stack.sh` (`classify`, `diffsum`, `conflicts`, `switch-check`) for fast, token-dense repository introspection.
+
+### Changed
+- `git-ops` skill (`v1.12.0`) refactored into a high-density, token-optimized micro-kernel focused strictly on execution and postcondition validation.
+- Standardized cross-harness skill distribution and manifest alignment across Claude Code, Codex, Cursor, Antigravity, and OpenCode.
+
 ## [1.13.1] — 2026-08-13
 
 ### Fixed

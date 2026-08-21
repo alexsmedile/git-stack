@@ -2,9 +2,9 @@
 type: Mission
 id: 01a025df-14e0-7113-ac9a-3526005b8f5b
 title: Introduce fast repository guardrails for Git and GitHub
-status: active
+status: completed
 created: "2026-08-21T19:50:32Z"
-updated: "2026-08-21T20:17:42Z"
+updated: "2026-08-21T21:33:22Z"
 activation:
     at: "2026-08-21T19:50:32Z"
     by: Alex
@@ -43,6 +43,12 @@ completion:
     - claim: reviewed-guardrails-package
       pass_boundary: The portable model-invoked skill is progressively disclosed, scripts exist only for compact deterministic evidence or fragile exact effects, GitHub is the first provider implementation without obscuring Git core portability, and no Skill Forge or independent-review blocker remains.
       proof_requirement: Portable Skill Forge validation, representative helper fixtures if a helper is earned, synchronization/manifests/distribution gates, fresh-context full review with scoped verification as needed, and independent FROST review pass on the committed tree.
+completion_record:
+    at: "2026-08-21T21:33:22Z"
+    authorization: owner supplied --by after schema checks
+    by: Alex
+    review: RV1
+    reviewed_commit: 739cf72c42b37af9007e67f5525dee76aa37bac8
 contract:
     fingerprint: sha256:802030ebc7ab61f13e3d9d35076ebc71938bf88d9158c9368ba17bb9880d631b
     ref: Contract:01a02533-1526-7162-8bc1-ce702b45ef40
@@ -101,7 +107,7 @@ run:
     ref: R1
     repairs: 0
     started_at: "2026-08-21T19:50:32Z"
-    status: active
+    status: completed
 scope:
     mechanical:
         - .spectacular/

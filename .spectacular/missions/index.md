@@ -17,3 +17,5 @@
 | `M2/RV1` | Review | Independent FROST repair review of M2 | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/reviews/RV1-independent-frost-repair-review-of-m2.md` |
 | `M3` | Mission | Introduce fast repository guardrails for Git and GitHub | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/M3-introduce-fast-repository-guardrails-for-git-and-github.md` |
 | `M3/RV1` | Review | Independent FROST repair review of M3 | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/reviews/RV1-independent-frost-repair-review-of-m3.md` |
+| `M4` | Mission | Bundle integration and review | `.spectacular/missions/M4-bundle-integration-and-review/M4-bundle-integration-and-review.md` |
+| `M4/RV1` | Review | Independent FROST review of M4 | `.spectacular/missions/M4-bundle-integration-and-review/reviews/RV1-independent-frost-review-of-m4.md` |
