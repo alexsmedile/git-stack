@@ -172,6 +172,66 @@ test("Repo Hygiene Engine (git-stack.sh cleanup)", async (t) => {
   });
 });
 
+test("Tier 1 & 2 Mechanical Token-Saving Scripts", async (t) => {
+  await t.test("classify returns history ownership and dependents correctly", () => {
+    const repo = createStackedBranchesRepo();
+    try {
+      // On feat/step-1, feat/step-2 and feat/step-3 depend on it
+      const res = runGitStack("classify", ["--path", "feat/step-1"], repo.dir);
+      assert.equal(res.code, 0);
+      const parsed = parseKeyVal(res.stdout);
+      assert.equal(parsed.OP, "classify");
+      assert.equal(parsed.REF, "feat/step-1");
+      assert.equal(parsed.PUBLISHED, "no");
+      assert.ok(Number(parsed.DEPENDENTS) >= 2);
+      assert.equal(parsed.SUGGESTED_CLASS, "SHARED");
+
+      // On feat/step-3, no other branch depends on it
+      const res3 = runGitStack("classify", ["--path", "feat/step-3"], repo.dir);
+      const parsed3 = parseKeyVal(res3.stdout);
+      assert.equal(parsed3.DEPENDENTS, "0");
+      assert.equal(parsed3.SUGGESTED_CLASS, "PRIVATE");
+    } finally {
+      repo.cleanup();
+    }
+  });
+
+  await t.test("diffsum returns token-dense diff stats and type hints", () => {
+    const repo = createCleanRepo();
+    try {
+      repo.run("git checkout -b feat/docs-test");
+      fs.writeFileSync(path.join(repo.dir, "docs.md"), "Documentation\n");
+      repo.run("git add docs.md");
+
+      const res = runGitStack("diffsum", [], repo.dir);
+      assert.equal(res.code, 0);
+      const parsed = parseKeyVal(res.stdout);
+      assert.equal(parsed.OP, "diffsum");
+      assert.equal(parsed.FILES, "1");
+      assert.equal(parsed.TYPE_HINT, "docs");
+      assert.equal(parsed.VERDICT, "SUMMARIZED");
+    } finally {
+      repo.cleanup();
+    }
+  });
+
+  await t.test("switch-check detects held worktrees and collision risks", () => {
+    const repo = createOccupiedWorktreeRepo();
+    try {
+      // Branch feat/wt-branch is held by linked worktree
+      const res = runGitStack("switch-check", ["--path", "feat/wt-branch"], repo.dir);
+      assert.equal(res.code, 0);
+      const parsed = parseKeyVal(res.stdout);
+      assert.equal(parsed.OP, "switch-check");
+      assert.equal(parsed.TARGET_BRANCH, "feat/wt-branch");
+      assert.notEqual(parsed.WORKTREE_HELD, "NONE");
+      assert.equal(parsed.SAFE_SWITCH, "no");
+    } finally {
+      repo.cleanup();
+    }
+  });
+});
+
 test("Clean Merge & Stack Subsumption", async (t) => {
   await t.test("fast-forwards stacked branches and prunes subsumed branches safely", () => {
     const repo = createStackedBranchesRepo();

@@ -29,11 +29,15 @@ PATH_ARGS=()
 
 usage() {
   cat <<'EOF'
-Usage: git-stack.sh <state|commit|push|tag|release|cleanup|scan> [options]
+Usage: git-stack.sh <state|classify|diffsum|conflicts|switch-check|commit|push|tag|release|cleanup|scan> [options]
 
 Write ops: commit, push, tag, release
 Read-only reports (never write):
   state               Compact local branch/status/worktree/target facts
+  classify            History ownership evidence (upstream, dependents, protection)
+  diffsum             Staged/working diff summary with type & scope hints
+  conflicts / triage  Interrupted op & conflict file status with recovery ref
+  switch-check        Pre-checkout collision & worktree occupancy check
   cleanup             Repo hygiene counts: branches, stashes, junk, size
   scan                Commit subjects since last tag, grouped by type
 
@@ -77,7 +81,7 @@ while (($#)); do
   shift
 done
 
-case "$OP" in state|commit|push|tag|release|cleanup|scan) ;; *) usage; exit 1 ;; esac
+case "$OP" in state|commit|push|tag|release|cleanup|scan|classify|diffsum|conflicts|triage|switch-check) ;; *) usage; exit 1 ;; esac
 
 if ((PUBLISH_TAG)) && [[ "$OP" != tag || "$MODE" != execute ]]; then
   printf 'VERDICT=BLOCKED\nBLOCKER=publish-tag-requires-tag-execute\n'
@@ -243,6 +247,171 @@ if [[ "$OP" == scan ]]; then
 
   if ((total == 0)); then printf 'VERDICT=NOTHING_TO_DO\n'; exit 2; fi
   printf 'VERDICT=CLEAN\n'
+  exit 0
+fi
+
+if [[ "$OP" == classify ]]; then
+  target_ref="${PATH_ARGS[0]:-${branch:-HEAD}}"
+  ref_sha=$(git rev-parse -q --verify "$target_ref" 2>/dev/null || true)
+  if [[ -z "$ref_sha" ]]; then
+    printf 'OP=classify\nREF=%s\nVERDICT=NOT_FOUND\n' "$target_ref"
+    exit 1
+  fi
+
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name "${target_ref}@{upstream}" 2>/dev/null || true)
+  ahead=0; behind=0; published=no
+  if [[ -n "$upstream" ]]; then
+    published=yes
+    counts=$(git rev-list --left-right --count "$upstream...$target_ref" 2>/dev/null || printf '0 0')
+    behind=${counts%%[[:space:]]*}
+    ahead=${counts##*[[:space:]]}
+  else
+    upstream=NONE
+  fi
+
+  dependents=$(git branch --format='%(refname:short)' --contains "$ref_sha" 2>/dev/null | grep -vxE "$target_ref|$default_branch" | paste -sd, - || true)
+  dep_count=0
+  [[ -n "$dependents" ]] && dep_count=$(printf '%s\n' "$dependents" | tr ',' '\n' | awk 'NF{n++} END{print n+0}')
+
+  protected=no
+  case "$target_ref" in
+    "$default_branch"|main|master|production|release/*) protected=yes ;;
+  esac
+
+  suggested_class=PRIVATE
+  evidence=local-only
+  if [[ "$protected" == yes ]]; then
+    suggested_class=SHARED
+    evidence=protected-branch
+  elif [[ "$dep_count" -gt 0 ]]; then
+    suggested_class=SHARED
+    evidence="dependents:$dependents"
+  elif [[ "$published" == yes ]]; then
+    suggested_class=PUBLISHED_SOLO
+    evidence="upstream:$upstream"
+  fi
+
+  printf 'OP=classify\nREF=%s\nSHA=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nPUBLISHED=%s\nDEPENDENTS=%s\nDEPENDENT_BRANCHES=%s\nPROTECTED=%s\nSUGGESTED_CLASS=%s\nEVIDENCE=%s\nVERDICT=CLASSIFIED\n' \
+    "$target_ref" "${ref_sha:0:7}" "$upstream" "$ahead" "$behind" "$published" "$dep_count" "${dependents:-NONE}" "$protected" "$suggested_class" "$evidence"
+  exit 0
+fi
+
+if [[ "$OP" == diffsum ]]; then
+  cached_flag="--cached"
+  staged_names=$(git diff --cached --name-only 2>/dev/null || true)
+  if [[ -z "$staged_names" ]]; then
+    cached_flag=""
+  fi
+
+  stat_summary=$(git diff $cached_flag --shortstat 2>/dev/null || true)
+  files=$(printf '%s\n' "$stat_summary" | awk '/changed/{print $1+0}')
+  ins=$(printf '%s\n' "$stat_summary" | awk '/insertion/{print $4+0}')
+  del=$(printf '%s\n' "$stat_summary" | awk '/deletion/{print $6+0}')
+  [[ -z "$files" ]] && files=0
+  [[ -z "$ins" ]] && ins=0
+  [[ -z "$del" ]] && del=0
+
+  names=$(git diff $cached_flag --name-only 2>/dev/null || true)
+  
+  type_hint=chore
+  scope_hint=root
+  tests_touched=no
+  
+  if printf '%s\n' "$names" | grep -Eq 'test|spec|\.evals'; then
+    tests_touched=yes
+  fi
+  
+  if [[ -z "$names" ]]; then
+    type_hint=none
+    scope_hint=none
+  elif printf '%s\n' "$names" | grep -Eq '^docs/|README|\.md$'; then
+    type_hint=docs
+    scope_hint=docs
+  elif printf '%s\n' "$names" | grep -Eq '^tests/|__tests__/'; then
+    type_hint=test
+    scope_hint=tests
+  elif printf '%s\n' "$names" | grep -Eq '^\.github/|^\.ci/'; then
+    type_hint=ci
+    scope_hint=ci
+  elif printf '%s\n' "$names" | grep -Eq '^skills/repo-governance/'; then
+    type_hint=feat
+    scope_hint=governance
+  elif printf '%s\n' "$names" | grep -Eq '^skills/git-ops/'; then
+    type_hint=feat
+    scope_hint=git-ops
+  elif printf '%s\n' "$names" | grep -Eq '^skills/repo-guardrails/'; then
+    type_hint=feat
+    scope_hint=guardrails
+  elif printf '%s\n' "$names" | grep -Eq '^src/scripts/|^scripts/'; then
+    type_hint=refactor
+    scope_hint=scripts
+  fi
+
+  top_files=$(git diff $cached_flag --stat 2>/dev/null | head -n 5 | tr '\n' ';' || true)
+
+  printf 'OP=diffsum\nCACHED=%s\nFILES=%s\nINS=%s\nDEL=%s\nTYPE_HINT=%s\nSCOPE_HINT=%s\nTESTS_TOUCHED=%s\nTOP_FILES=%s\nVERDICT=SUMMARIZED\n' \
+    "${cached_flag:+yes}" "$files" "$ins" "$del" "$type_hint" "$scope_hint" "$tests_touched" "${top_files:-none}"
+  exit 0
+fi
+
+if [[ "$OP" == conflicts || "$OP" == triage ]]; then
+  interrupted=NONE
+  target=NONE
+  for item in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_START; do
+    marker=$(git rev-parse --git-path "$item" 2>/dev/null || true)
+    if [[ -n "$marker" && -e "$marker" ]]; then
+      interrupted=$item
+      break
+    fi
+  done
+  if [[ "$interrupted" == NONE ]]; then
+    for item in rebase-merge rebase-apply; do
+      marker=$(git rev-parse --git-path "$item" 2>/dev/null || true)
+      if [[ -n "$marker" && -e "$marker" ]]; then
+        interrupted=REBASE
+        target=$(cat "$marker/onto_name" 2>/dev/null || cat "$marker/onto" 2>/dev/null || printf 'UNKNOWN')
+        break
+      fi
+    done
+  fi
+
+  conflict_files=$(git status --porcelain 2>/dev/null | awk '/^(UU|AA|UD|DU|DD|AU|UA) /{print $2}' | paste -sd, - || true)
+  conflict_count=0
+  [[ -n "$conflict_files" ]] && conflict_count=$(printf '%s\n' "$conflict_files" | tr ',' '\n' | awk 'NF{n++} END{print n+0}')
+
+  recovery_ref=$(git rev-parse -q --short 'HEAD@{1}' 2>/dev/null || printf 'HEAD')
+
+  printf 'OP=conflicts\nINTERRUPTED=%s\nTARGET=%s\nCONFLICT_COUNT=%s\nCONFLICT_FILES=%s\nRECOVERY_POINT=%s\nVERDICT=%s\n' \
+    "$interrupted" "$target" "$conflict_count" "${conflict_files:-NONE}" "$recovery_ref" "${interrupted:-NONE}"
+  exit 0
+fi
+
+if [[ "$OP" == switch-check ]]; then
+  target_branch="${PATH_ARGS[0]:-${1:-}}"
+  if [[ -z "$target_branch" ]]; then
+    printf 'OP=switch-check\nVERDICT=BLOCKED\nBLOCKER=missing-target-branch\n'
+    exit 1
+  fi
+
+  held_worktree=$(git worktree list --porcelain 2>/dev/null | awk -v tb="refs/heads/$target_branch" '
+    /^worktree /{wt=$2}
+    /^branch /{if ($2 == tb) {print wt}}
+  ')
+
+  dirty_count=$(git status --porcelain 2>/dev/null | awk 'NF{n++} END{print n+0}')
+  
+  clobber_risk=no
+  if ((dirty_count > 0)); then
+    if ! git checkout --dry-run "$target_branch" >/dev/null 2>&1 && ! git checkout -b "$target_branch" --dry-run >/dev/null 2>&1; then
+      clobber_risk=yes
+    fi
+  fi
+
+  safe_switch=yes
+  [[ -n "$held_worktree" || "$clobber_risk" == yes ]] && safe_switch=no
+
+  printf 'OP=switch-check\nTARGET_BRANCH=%s\nWORKTREE_HELD=%s\nDIRTY_COUNT=%s\nCLOBBER_RISK=%s\nSAFE_SWITCH=%s\nVERDICT=%s\n' \
+    "$target_branch" "${held_worktree:-NONE}" "$dirty_count" "$clobber_risk" "$safe_switch" "$([[ "$safe_switch" == yes ]] && printf 'SAFE' || printf 'UNSAFE')"
   exit 0
 fi
 # ---------------------------------------------------------------------------
