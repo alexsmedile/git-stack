@@ -22,6 +22,8 @@ execution; this skill does not teach or wrap ordinary Git.
 Identify the intended outcome, named operation, target paths or refs, and effects
 the user already authorized. Before creating or replacing a path, establish
 whether it exists and whether it contains tracked, modified, or untracked work.
+A request for the task outcome does not authorize an unstated branch, worktree,
+stash, rewrite, or provider effect.
 
 Completion: the intended outcome, relevant targets, and already-authorized
 effects are explicit; an existing target is never silently treated as absent.

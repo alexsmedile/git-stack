@@ -82,6 +82,17 @@ worktree; return one safe next action or a narrow authorization question.
   human-review prompt tests for the dominant, risky, and near-miss cases.
 - Scoped verification: pass, 2026-08-21. All seven original blockers resolved;
   no repair regression and no unresolved blocker.
+- Verifier attribution: `repo_governance_verifier`, fresh context, inspected the
+  repaired package and Skill Forge glossary, returned pass for the closed issue
+  list. The first independent M1 FROST reviewer inspected commit `8ba7616` and
+  requested one proof repair batch; its two blocking findings are retained in
+  the M1 review trail rather than misreported as a passing Skill Forge review.
+- M1 repair evidence: `workstream_fixture_runner` produced attributable results
+  for five collision/isolation cases. `history_fixture_runner` exposed one
+  structural-authorization ambiguity; after the instruction repair,
+  `history_fixture_rerun` passed all eight history/profile variants including
+  protected, release-bound, occupied/diverged, and unknown evidence. Results are
+  retained in `skills/repo-governance/evals/results.md`.
 
 ### Verified dispositions
 

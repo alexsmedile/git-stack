@@ -82,8 +82,12 @@ fi
 
 branch=$(git branch --show-current 2>/dev/null || true)
 default_branch=$(git symbolic-ref --quiet --short "refs/remotes/$REMOTE/HEAD" 2>/dev/null | sed "s#^$REMOTE/##")
+default_branch_source=remote-head
 if [[ -z "$default_branch" ]]; then
-  case "$branch" in main|master) default_branch=$branch ;; *) default_branch=main ;; esac
+  case "$branch" in
+    main|master) default_branch=$branch; default_branch_source=current-conventional ;;
+    *) default_branch=main; default_branch_source=heuristic-main ;;
+  esac
 fi
 
 # ---- read-only reports: emit compact counts and exit, never write ----------
@@ -116,8 +120,8 @@ if [[ "$OP" == state ]]; then
   fi
 
   worktree_count=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{n++} END{print n+0}')
-  printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nWORKTREES=%s\n' \
-    "$root" "${branch:-DETACHED}" "$default_branch" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$worktree_count"
+  printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nDEFAULT_BRANCH_SOURCE=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nWORKTREES=%s\n' \
+    "$root" "${branch:-DETACHED}" "$default_branch" "$default_branch_source" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$worktree_count"
 
   worktree_index=0
   while IFS= read -r line; do

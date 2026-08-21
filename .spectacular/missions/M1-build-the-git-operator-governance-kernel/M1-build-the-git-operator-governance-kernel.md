@@ -91,7 +91,7 @@ run:
     id: 019ff873-e260-7b5d-8636-d61672caae89
     operator: Alex
     ref: R1
-    repairs: 0
+    repairs: 1
     started_at: "2026-08-21T16:42:28Z"
     status: active
 scope:

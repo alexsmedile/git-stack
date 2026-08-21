@@ -81,8 +81,15 @@ Authorize me to proceed? (Y/N)
 ```
 
 An explicit user request for that same effect is authorization; do not ask twice.
+"Fix this file" authorizes the edit, not an unstated branch/worktree creation;
+"create a branch and worktree for this fix" authorizes both boundaries.
 After authorization, hand the exact operation to `git-ops` rather than restating
 its command procedure.
+
+`PROTECTED` or `RELEASE_BOUND` history routes additive work to `git-ops`; route
+to `repo-guardrails` only when the request is to inspect or change the policy
+itself. Under `UNKNOWN`, continue a disjoint non-destructive task only inside an
+already-authorized boundary; ask before creating new isolation for it.
 
 Completion: one plan accounts for branch, worktree, history, risks, route, and
 approval; `NEXT` preserves all observed work if execution stops here.
