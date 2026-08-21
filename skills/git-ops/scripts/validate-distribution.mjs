@@ -24,6 +24,7 @@ const root = findRoot(path.dirname(fileURLToPath(import.meta.url)));
 const native = process.argv.includes("--native");
 const errors = [];
 const checked = [];
+const expectedSkills = ["git-ops", "repo-governance", "repo-guardrails", "repo-hygiene", "update-docs", "repo-prettifier"];
 
 function fail(message) { errors.push(message); }
 function readJson(relative) {
@@ -134,7 +135,7 @@ const expectedCommands = ["commit", "push", "release", "changelog", "update-docs
 for (const command of expectedCommands) {
   requireValue(fs.existsSync(path.join(root, `adapters/claude/commands/${command}.md`)), `command:${command}:missing`);
 }
-for (const skill of ["git-ops", "repo-hygiene", "update-docs", "repo-prettifier"]) {
+for (const skill of expectedSkills) {
   const skillFile = path.join(root, `skills/${skill}/SKILL.md`);
   requireValue(fs.existsSync(skillFile), `skill:${skill}:missing`);
   if (fs.existsSync(skillFile)) {
@@ -191,10 +192,10 @@ if (native) {
     const result = spawnSync("opencode", ["debug", "skill"], { cwd: workspace, env, encoding: "utf8" });
     if (result.error || result.status !== 0) {
       fail(`native:opencode-skill:${(result.stderr || result.stdout || result.error?.message || "failed").trim().split("\n").pop()}`);
-    } else if (!result.stdout.includes('"name": "git-ops"') || !result.stdout.includes('"name": "repo-prettifier"')) {
-      fail("native:opencode-skill:portable-skills-not-discovered");
     } else {
-      checked.push("opencode-skill");
+      const missing = expectedSkills.filter(skill => !result.stdout.includes(`"name": "${skill}"`));
+      if (missing.length) fail(`native:opencode-skill:portable-skills-not-discovered:${missing.join(",")}`);
+      else checked.push("opencode-skill");
     }
     fs.rmSync(temp, { recursive: true, force: true });
   }

@@ -24,7 +24,8 @@ package, glossary, original issue list, and verification protocol. Verdict
 # Paired cold evidence
 
 The untouched baseline and oracle-withheld skilled run are retained in
-`skills/repo-guardrails/evals/results.md`. The skilled run passed 24/24 cases,
+`skills/repo-guardrails/evals/results.md` plus per-case `skilled-run.md` and
+`baseline-run.md`. The skilled run passed 28/28 cases,
 accounted for all 19 catalog controls in audits, loaded no unrelated context,
 and kept every write behind named proposal-ID approval and read-after-write proof.
 

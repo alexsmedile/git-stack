@@ -16,7 +16,7 @@ Use this when: a named operation needs a cheap policy decision before `git-ops`.
 | commit | protected/default direct-write policy, required local hooks/scans, signing/identity override |
 | push | protected branch/ruleset, force-push, required checks before publish, push protection |
 | rebase/history rewrite | protected/shared-history policy, force-push/ruleset, dependent automation |
-| PR open/ready | target ruleset, required checks/reviews, ownership/template requirements |
+| PR open/ready | target ruleset, required checks/reviews, ownership requirements |
 | PR merge | approvals, required checks, merge strategy, conversation resolution, deployment gate |
 | tag/release | release branch/tag policy, CI/provenance, environment/deployment approvals, secret scope |
 

@@ -103,5 +103,5 @@ which controls, proposal items, or effects were selected.
 Maintainers use [evals/triggers.md](evals/triggers.md) and
 [evals/behavior.md](evals/behavior.md) without exposing
 [evals/oracle.md](evals/oracle.md) to the evaluator. The attributable paired run
-is retained in [evals/results.md](evals/results.md). Runtime operations load none
-of these files.
+is retained in [evals/results.md](evals/results.md), with per-case skilled and
+baseline records linked there. Runtime operations load none of these files.

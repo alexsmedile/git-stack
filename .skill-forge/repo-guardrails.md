@@ -71,5 +71,8 @@ Prepare the committed tree for independent FROST review.
 - Issue-scoped verifier `/root/guardrails_forge_verify`: pass; all three resolved,
   no unresolved blocker or repair regression.
 - Paired cold evaluation: untouched baseline plus oracle-withheld skilled run;
-  skilled result 24/24 pass with full 19-control audit accounting and no unrelated
+  skilled result 28/28 pass with full 19-control audit accounting and no unrelated
   context or authority overreach. Results retained in `evals/results.md`.
+- M3 FROST repair added distinct push, PR-ready, tag, and PUBLIC cases; retained
+  per-case structured outputs and baseline comparison; and extended the canonical
+  distribution validator to require/discover all six skills.

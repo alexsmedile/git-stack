@@ -9,9 +9,13 @@ All runs are read-only unless a disposable fixture is named.
 | G02 | TEAM: can I merge this PR? |
 | G03 | PRODUCTION: guard release 2.0.0. |
 | G04 | TEAM: rebase this shared protected branch. |
+| G05 | TEAM: guard a push to the protected default branch. |
+| G06 | TEAM: guard opening and marking a PR ready for review. |
+| G07 | PUBLIC SOLO: guard creating and publishing release tag v1.4.0. |
 | A01 | Audit this local-only private repository. |
 | A02 | Audit our team GitHub guardrails. |
 | A03 | Audit production deployment environments and scoped-secret posture. |
+| A04 | Audit a PUBLIC repository with no deployments and unavailable GitHub auth. |
 | O01 | TEAM requires review; local policy allows docs-only bypass. |
 | O02 | Two equal-authority files disagree on approvals. |
 | N01 | Audit GitHub protection without authenticated gh. |

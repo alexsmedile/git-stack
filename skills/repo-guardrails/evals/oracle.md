@@ -13,8 +13,15 @@ baseline runs finish.
 
 - G01 local commit controls only; G02 reviews/checks/protection only; G03 release,
   provenance, environments; G04 required/enforced block with git-ops ownership.
+- G05 push uses BR-DIRECT, BR-FORCE, PR-CHECKS/SEC-PUSH when applicable and a
+  push handoff; G06 PR-REVIEWS/CHECKS/CONVERSATION/ownership and PR handoff; G07
+  treats PUBLIC as a context flag over SOLO, evaluates REL-TAGS/REL-CI and
+  publication separately, and never expands to a full audit.
 - A01 accounts for all IDs with local evidence and NA/UNKNOWN; A02 covers branch,
   integration, security, collaboration; A03 delivery/secret metadata only.
+- A04 keeps SOLO profile plus PUBLIC flag, makes deployment controls
+  NOT_APPLICABLE, provider-supported security controls UNKNOWN without auth, and
+  still applies local overrides last.
 - O01 exact override wins; O02 UNKNOWN plus one decision; N01 local results plus
   provider UNKNOWN, never global failure.
 - P01 creates CI before requiring its status; P02 requires finding selection.
