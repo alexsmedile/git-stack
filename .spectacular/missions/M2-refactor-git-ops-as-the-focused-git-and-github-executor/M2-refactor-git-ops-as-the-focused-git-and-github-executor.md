@@ -2,9 +2,9 @@
 type: Mission
 id: 01a025c7-56c0-7cc7-85f2-175e16225ef3
 title: Refactor git-ops as the focused Git and GitHub executor
-status: active
+status: completed
 created: "2026-08-21T19:26:17Z"
-updated: "2026-08-21T19:45:15Z"
+updated: "2026-08-21T19:49:27Z"
 activation:
     at: "2026-08-21T19:26:17Z"
     by: Alex
@@ -43,6 +43,12 @@ completion:
     - claim: reviewed-executor-skill
       pass_boundary: The patched `git-ops` package is progressively disclosed, contains no material duplication or no-op Git tutorial prose, preserves relevant pre-existing user edits, and has no unresolved Skill Forge or independent-review blocker.
       proof_requirement: Skill Forge portable validation passes, a fresh-context full review returns pass with a right-sized verdict after at most one scoped repair verification, and independent FROST review verifies the committed tree and all three behavioral claim families.
+completion_record:
+    at: "2026-08-21T19:49:27Z"
+    authorization: owner supplied --by after schema checks
+    by: Alex
+    review: RV1
+    reviewed_commit: e787ee9c3b39b1f9c203a4d8503908ddf38ed3b1
 contract:
     fingerprint: sha256:802030ebc7ab61f13e3d9d35076ebc71938bf88d9158c9368ba17bb9880d631b
     ref: Contract:01a02533-1526-7162-8bc1-ce702b45ef40
@@ -96,7 +102,7 @@ run:
     ref: R1
     repairs: 0
     started_at: "2026-08-21T19:26:17Z"
-    status: active
+    status: completed
 scope:
     mechanical:
         - .spectacular/
