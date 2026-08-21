@@ -38,8 +38,8 @@ For a suspected secret, redact the value and prioritize revocation/rotation when
 remote exposure is possible.
 
 If no safe recovery point can be established, stop after the diagnostic report
-with `APPROVAL: NOT_READY` and no route, rather
-than offering a speculative destructive command.
+with `APPROVAL: NOT_READY` and no route, rather than offering a speculative
+destructive command.
 
 Completion: the report names protected state, a verified recovery point or
 `UNKNOWN`, and the consequence of proceeding without it.

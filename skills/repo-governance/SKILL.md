@@ -1,6 +1,6 @@
 ---
 name: repo-governance
-description: Universal repository governance front door. Evaluates Git/GitHub requests through repository-aware judgment: fast-routes atomic operations, orients dirty/unfamiliar state, selects/resumes workstreams, prevents file & worktree collisions, classifies history before rewrites, or halts for diagnostic recovery.
+description: Universal repository governance front door. Evaluates Git/GitHub requests (commit, push, branch, worktree, stash, merge, rebase, amend, reset, force-push, PR, release). Selects workstreams, prevents file/worktree collisions, classifies history before rewrites, or halts for recovery. Do not use for non-repo file work or read-only Git concept explanations.
 metadata:
   version: "0.3.0"
   status: current
@@ -16,9 +16,11 @@ Universal entry point for repository judgment before modifying files, history, o
 ## 1. Frame & Quick Guard
 
 - **Frame**: Identify outcome, operation, target paths, and explicit user authorizations. Target check: exists $\rightarrow$ inspect tracked/dirty. Never assume absent. Action request $\neq$ unstated branch/worktree/stash/rewrite authorization.
-- **Quick Guard**: Read-only local inspection (`bash scripts/git-stack.sh state --path <target>`). Resolves root, branch, clean status, linked worktrees, and `TARGET_OVERLAP` (changed-file overlap across branches). Absence of script degrades to direct git read commands.
+- **Quick Guard**: Read-only local inspection (`bash scripts/git-stack.sh state --path <target>`). Resolves root, branch, clean status, `STASHES` count, linked worktrees, and `TARGET_OVERLAP` (named branches with unmerged commits touching the target). Absence of script degrades to direct git read commands.
 
 ## 2. Route Selection
+
+Route enum is strictly pinned to: `execute | plan-work | recover | guardrails | specialist` (never invent routes).
 
 | Situation / Evidence | Route | Action / Reference |
 |---|---|---|
@@ -45,6 +47,7 @@ NEXT: <one safe action>
 ```
 
 - **Unrequested Mutation Guard**: Before unrequested structural, destructive, provider, or shared-history changes, halt and prompt: `Observed: <facts> | Proposed: <effect> | Risk/Recovery: <point> | Authorize? (Y/N)`.
+- **Handoff Mechanism**: Load sibling skill by name; if host cannot load, execute with native git and apply bundle invariants inline. Missing specialist never blocks routine work.
 
 ## Invariants
 
