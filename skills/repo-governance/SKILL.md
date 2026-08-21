@@ -1,8 +1,8 @@
 ---
 name: repo-governance
-description: Route every agent-handled Git or GitHub request through repository-aware judgment: fast-route a clear atomic operation, orient unfamiliar or dirty state, select or resume a branch/worktree, prevent existing-file and concurrent-work collisions, classify history before rewriting it, or stop for recovery. Use before Git/GitHub work, including commit, push, branch, worktree, merge, rebase, PR, release, repository policy, and recovery requests. Do not use for non-repository file work or when a human is deliberately running Git without agent help.
+description: Route agent-handled Git or GitHub requests through repository-aware judgment before anything changes. Use for any Git or GitHub work — commit, push, branch, worktree, stash, merge, rebase, PR, tag, release, repository policy, or recovery — including plain "commit this" and "push" requests, dirty or unfamiliar repos, and any request that would rewrite history (rebase, amend, reset, force-push). Selects the right workstream, prevents file collisions and concurrent-work conflicts, classifies history ownership, and stops safely on surprising state. Do not use for non-repository file work, general programming tasks unrelated to version control, or read-only questions about Git concepts.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   status: draft
   category: devtools
   target: portable-agent-skill
@@ -41,7 +41,11 @@ Use local, read-only evidence only:
 Collect no remote facts unless the chosen route needs GitHub collaboration or
 policy state. When bundled scripts are available, resolve this skill's directory
 and run `bash scripts/git-stack.sh state`, adding `--path <target>` for each
-explicit target. It reports facts, never a route. When the helper is unavailable
+explicit target. It reports facts, never a route. Decision-relevant fields:
+`STASHES` counts saved-but-unapplied work that a reset or checkout could strand;
+`TARGET_<n>_OVERLAP` names local branches carrying unmerged commits that touch
+each target — changed-file overlap, the strongest workstream evidence. When the
+helper is unavailable
 or direct inspection is cheaper, inspect Git directly; absence of an optimization
 is not a blocker.
 
@@ -49,6 +53,17 @@ Completion: every fact capable of changing the immediate route is known or
 marked `UNKNOWN` with its consequence; no mutation has occurred.
 
 ## 3. Choose one route
+
+Check the fast map first; fall through to the full table only when no row matches.
+
+| Situation | Route |
+|---|---|
+| Plain commit/push request; staged or disjoint work; clean or understood state | `execute` (silent fast lane) |
+| Dirty tree with unrelated work, target path already modified elsewhere, or `TARGET_<n>_OVERLAP` is non-`NONE` | `plan-work` |
+| Any rewrite requested (rebase/amend/reset/force-push) and history ownership not yet classified | `plan-work` — classify first |
+| Merge/rebase/cherry-pick/bisect in progress, diverged history, or work that looks lost | `recover` |
+| Branch protection, CI policy, environments, secrets posture, enforcement | `guardrails` |
+| Cleanup, documentation, release notes, README presentation | `specialist` |
 
 | Condition | Route | Load or hand off |
 |---|---|---|
@@ -60,6 +75,18 @@ marked `UNKNOWN` with its consequence; no mutation has occurred.
 
 Load only the selected route. Re-run the quick guard if the target, ownership,
 working tree, or requested effect changes.
+
+The `ROUTE` value is exactly one of: `execute | plan-work | recover |
+guardrails | specialist`. This is the only route vocabulary in the bundle;
+references and reports reuse these values and never invent routes. When no
+route can proceed safely, stop after reporting — do not name a new route.
+
+Handoff mechanism: skills share one model context; "hand off" means continuing
+under the named skill's procedure, loading its SKILL.md by name through the
+host's skill system (`git-ops`, `repo-guardrails`, `repo-hygiene`,
+`update-docs`, `repo-prettifier`). If the host cannot load a sibling skill,
+proceed with native Git/GitHub and apply this bundle's safety rules inline.
+A missing specialist never blocks routine work.
 
 Completion: exactly one route is selected with the fact that selected it and
 the next owning skill or reference.

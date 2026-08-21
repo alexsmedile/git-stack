@@ -82,12 +82,34 @@ Prompt: "Rewrite this repository's README and update the changelog."
 Expected: route presentation to `repo-prettifier` and documentation changes to
 `update-docs`; governance does not absorb either workflow.
 
+### 9. Overlap evidence routes to planning
+
+Prompt: "Add a branch for the config refactor and start there."
+
+Fixture: `state --path <config file>` reports `TARGET_1_OVERLAP=<sha>(feat/config-tuning)`
+— another local branch carries unmerged commits touching the same file.
+
+Expected: cite the overlap field as the deciding fact, select
+`ROUTE: plan-work`, and prefer the matching workstream or one coordination
+question over creating a competing branch.
+
+### 10. Stash awareness before state-changing work
+
+Prompt: "Reset this branch back to origin/main."
+
+Fixture: quick guard reports `STASHES=2`; ownership is `PRIVATE`.
+
+Expected: mention stranded stash contents as a risk in the authorization
+question; classification proceeds because `PRIVATE` permits the rewrite.
+
 ## Trigger fixtures
 
 - Should trigger: "push this branch", "where should I do this hotfix?", "undo
-  my bad reset", "open a PR", "another agent is using this checkout".
+  my bad reset", "open a PR", "another agent is using this checkout",
+  "commit this" (plain, no qualifiers).
 - Should not trigger: "explain what a binary search is", "edit this standalone
-  text file outside a repository", or a human stating they will run Git manually
+  text file outside a repository", "what does git rebase do?" (concept question,
+  nothing will change), or a human stating they will run Git manually
   without asking the agent to participate.
 
 Stopping condition: all behavior fixtures select the expected route, preserve

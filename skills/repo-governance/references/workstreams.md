@@ -69,7 +69,7 @@ BRANCH: <reuse/create/coordinate + ref and base>
 WORKTREE: <reuse/create/preserve + path or placement rule>
 CLASS: <PRIVATE | PUBLISHED_SOLO | SHARED | UNKNOWN>
 RISK: <flags or NONE>
-ROUTE: <git-ops | recover | specialist>
+ROUTE: <execute | recover | specialist>
 APPROVAL: <NOT_NEEDED | REQUIRED: exact effect>
 NEXT: <one safe action>
 ```
