@@ -22,13 +22,15 @@ ALLOW_MAIN=0
 ALLOW_LARGE=0
 NO_FETCH=0
 STALE_DAYS=90
+PATH_ARGS=()
 
 usage() {
   cat <<'EOF'
-Usage: git-stack.sh <commit|push|tag|release|cleanup|scan> [options]
+Usage: git-stack.sh <state|commit|push|tag|release|cleanup|scan> [options]
 
 Write ops: commit, push, tag, release
 Read-only reports (never write):
+  state               Compact local branch/status/worktree/target facts
   cleanup             Repo hygiene counts: branches, stashes, junk, size
   scan                Commit subjects since last tag, grouped by type
 
@@ -41,6 +43,7 @@ Options:
   --allow-large         Explicitly allow staged files larger than 500KB
   --no-fetch            Skip fetch during push/release/cleanup checks
   --stale-days <n>      Stale-branch threshold for cleanup (default: 90)
+  --path <path>         Report existence/tracking/dirty state (repeatable; state only)
 
 Exit: 0 clean/done, 1 blocker or command failure, 2 nothing to do.
 EOF
@@ -61,13 +64,14 @@ while (($#)); do
     --allow-large) ALLOW_LARGE=1 ;;
     --no-fetch) NO_FETCH=1 ;;
     --stale-days) shift; STALE_DAYS=${1:-90} ;;
+    --path) shift; PATH_ARGS+=("${1:-}") ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'VERDICT=BLOCKED\nBLOCKER=unknown-option:%s\n' "$1"; exit 1 ;;
   esac
   shift
 done
 
-case "$OP" in commit|push|tag|release|cleanup|scan) ;; *) usage; exit 1 ;; esac
+case "$OP" in state|commit|push|tag|release|cleanup|scan) ;; *) usage; exit 1 ;; esac
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   printf 'VERDICT=BLOCKED\nOP=%s\nBLOCKER=not-a-git-repository\n' "$OP"
@@ -81,6 +85,74 @@ if [[ -z "$default_branch" ]]; then
 fi
 
 # ---- read-only reports: emit compact counts and exit, never write ----------
+if [[ "$OP" == state ]]; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  status=$(git status --porcelain 2>/dev/null || true)
+  staged=$(printf '%s\n' "$status" | awk 'NF && substr($0,1,2)!="??" && substr($0,1,1)!=" "{n++} END{print n+0}')
+  unstaged=$(printf '%s\n' "$status" | awk 'NF && substr($0,1,2)!="??" && substr($0,2,1)!=" "{n++} END{print n+0}')
+  untracked=$(printf '%s\n' "$status" | awk 'substr($0,1,2)=="??"{n++} END{print n+0}')
+
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+  ahead=0
+  behind=0
+  if [[ -n "$upstream" ]]; then
+    counts=$(git rev-list --left-right --count "$upstream...HEAD" 2>/dev/null || printf '0 0')
+    behind=${counts%%[[:space:]]*}
+    ahead=${counts##*[[:space:]]}
+  fi
+
+  interrupted=NONE
+  for item in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_START; do
+    marker=$(git rev-parse --git-path "$item" 2>/dev/null || true)
+    if [[ -n "$marker" && -e "$marker" ]]; then interrupted=$item; break; fi
+  done
+  if [[ "$interrupted" == NONE ]]; then
+    for item in rebase-merge rebase-apply; do
+      marker=$(git rev-parse --git-path "$item" 2>/dev/null || true)
+      if [[ -n "$marker" && -e "$marker" ]]; then interrupted=REBASE; break; fi
+    done
+  fi
+
+  worktree_count=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{n++} END{print n+0}')
+  printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nWORKTREES=%s\n' \
+    "$root" "${branch:-DETACHED}" "$default_branch" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$worktree_count"
+
+  worktree_index=0
+  while IFS= read -r line; do
+    case "$line" in
+      'worktree '*)
+        worktree_index=$((worktree_index + 1))
+        wt_path=${line#worktree }
+        printf 'WORKTREE_%s_PATH=%q\n' "$worktree_index" "$wt_path"
+        wt_dirty=$(git -C "$wt_path" status --porcelain 2>/dev/null | awk 'NF{n++} END{print n+0}')
+        printf 'WORKTREE_%s_DIRTY=%s\n' "$worktree_index" "$wt_dirty"
+        ;;
+      'branch refs/heads/'*)
+        printf 'WORKTREE_%s_BRANCH=%s\n' "$worktree_index" "${line#branch refs/heads/}"
+        ;;
+      detached)
+        printf 'WORKTREE_%s_BRANCH=DETACHED\n' "$worktree_index"
+        ;;
+    esac
+  done < <(git worktree list --porcelain 2>/dev/null)
+
+  target_index=0
+  for target in "${PATH_ARGS[@]}"; do
+    [[ -n "$target" ]] || continue
+    target_index=$((target_index + 1))
+    exists=no
+    [[ -e "$target" || -L "$target" ]] && exists=yes
+    tracked=no
+    git ls-files --error-unmatch -- "$target" >/dev/null 2>&1 && tracked=yes
+    dirty=no
+    [[ -n "$(git status --porcelain -- "$target" 2>/dev/null)" ]] && dirty=yes
+    printf 'TARGET_%s_PATH=%q\nTARGET_%s_EXISTS=%s\nTARGET_%s_TRACKED=%s\nTARGET_%s_DIRTY=%s\n' \
+      "$target_index" "$target" "$target_index" "$exists" "$target_index" "$tracked" "$target_index" "$dirty"
+  done
+  printf 'TARGETS=%s\nVERDICT=OBSERVED\n' "$target_index"
+  exit 0
+fi
+
 if [[ "$OP" == cleanup ]]; then
   [[ "$NO_FETCH" -eq 1 ]] || git fetch --quiet --prune "$REMOTE" >/dev/null 2>&1 || true
 

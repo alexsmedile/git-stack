@@ -35,6 +35,7 @@ const distribution = {
   ],
   "repo-hygiene": ["git-stack.sh", "secret-patterns.sh"],
   "update-docs": ["git-stack.sh", "secret-patterns.sh"],
+  "repo-governance": ["git-stack.sh", "secret-patterns.sh"],
 };
 
 function banner(name, comment) {
