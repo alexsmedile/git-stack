@@ -9,7 +9,7 @@ checks, authority boundary, recovery, and done condition.
 | push | upstream, ahead/behind, staged work, remote freshness | normal publish vs divergence/rewrite | unexpected remote/publish or any force push | expected remote ref equals local commit |
 | branch | selected workstream/base, target, overlap | useful history/review boundary | creation was not implied | ref uses intended base; tree intact |
 | worktree | branch ownership, linked trees, target path, dirty state | separate concurrent filesystem state | create/remove/relocate not requested | intended branch/path mapping; source intact |
-| merge | source/base, dirty state, freshness, consumers, checks | direction/strategy preserve history | merge/publish not requested or semantic resolution | target contains source; checks pass; no merge state |
+| merge | source/base, dirty state, freshness, consumers, stack subsumption | direction/strategy preserve history (ff vs 3-way) | merge/publish not requested or semantic resolution | target contains source; checks pass; no merge state; subsumed branches identified for cleanup |
 | rebase | history class, upstream, dirty state, freshness, dependents | only private or deliberately solo history rewrites | published rewrite or new consumer | commits replayed; checks pass; no rebase state |
 | revert | commit/range, merge parent, release state | additive rollback vs forward fix | revert not requested or operational impact | inverse commit and focused verification |
 | tag | version, release branch, clean tree, existing tags | tag verified release commit exactly once | pushing/replacing tag | annotated tag resolves to expected commit |

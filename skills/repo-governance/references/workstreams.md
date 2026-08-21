@@ -31,6 +31,7 @@ Completion: every plausible candidate is classified `MATCH`, `DISJOINT`, or
 | Current workstream owns the target files and its outcome includes the task | Reuse it | Reuse its tree if no concurrent hands are indicated. |
 | Existing workstream overlaps the files but ownership or intent conflicts | Stop for coordination; do not create a competing branch | Preserve both trees; do not switch, stash, or remove. |
 | Work is reviewable and disjoint from active work | Create or reuse a focused branch from the repository-approved base | Add a worktree only when the current tree is occupied or concurrent hands need isolation. |
+| Work is complete and ready for integration into base branch | Verify merge-base, linear ff-only capability, and clean working tree | Execute merge via `git-ops`; identify subsumed branches for safe deletion (`git branch -d`). |
 | Current tree is dirty with uncommitted/unverified WIP | Select the task's appropriate branch | **Prefer an ephemeral worktree** off the target base rather than stashing or polluting active WIP. |
 | Work depends on an unmerged feature branch (`STACK_BASE`) | Branch off parent feature branch; preserve rebase/PR base metadata | Use separate worktree if parent branch tree is active. |
 | Tiny operation belongs to the current established workstream | Reuse current branch | Reuse current tree. |

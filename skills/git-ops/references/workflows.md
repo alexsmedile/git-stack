@@ -28,13 +28,25 @@ stability demands rollback, revert first and diagnose separately. Done: the
 production-bound history contains the verified fix/revert and temporary state is
 retained intentionally or safely removed.
 
-## Integration and stacked work
+## Integration, clean merge, and stacked work
 
-Identify dependency order and each intended base. Validate each diff against its
-immediate base. Rewrite only history whose ownership permits it. Do not advance a
-stacked child until the parent's replacement commit is known. Done: every branch
-targets the intended base, review diffs remain meaningful, and the integration
-gate passes without dropping either side.
+1. **Stack & Base Verification**: Identify dependency order and each intended base.
+   Check whether child branches subsume parent commits in stacked series
+   (`A -> B -> C`).
+2. **Merge Strategy Selection**:
+   - *Fast-Forward (`--ff-only`)*: Preferred for linear stacks or rebased feature branches onto `main`.
+   - *Merge Commit (`--no-ff`)*: For preserved historical branch boundaries or multi-author features.
+   - *Squash Merge*: For noisy single-feature WIP PRs.
+3. **Safety Pre-conditions**: Ensure working tree is clean (`git-stack.sh state`),
+   upstream is fresh, and all tests/manifests pass before merging.
+4. **Post-Merge Verification & Cleanup**:
+   - Verify target HEAD contains the source commit(s).
+   - Identify newly merged branches (`git branch --merged <target>`).
+   - Offer safe local branch cleanup (`git branch -d <branch>`) for fully subsumed branches.
+   - Never use `-D` on branch cleanup unless unmerged commit loss is explicitly authorized.
+
+Done: target contains source, tests pass, no merge conflicts remain, and subsumed
+branches are safely pruned or reported.
 
 ## Session wrap-up
 
