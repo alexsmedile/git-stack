@@ -48,4 +48,4 @@ Emit one left-border box inside a fenced `text` block upon completion:
 - **History Protection**: Preserve shared history. Rewrite only `PRIVATE` or authorized `PUBLISHED_SOLO` with lease protection.
 - **Stage Discipline**: Stage only named/approved paths. Commit runner checks secrets and large files.
 - **Secret Containment**: Revoke/rotate exposed keys before history surgery.
-- **Merge Integrity**: Integrate feature branch $\rightarrow$ verify tests $\rightarrow$ advance default branch. Never resolve conflicts directly on default branch.
+- **Merge Integrity**: Integrate feature branch -> verify tests -> advance default branch. Never resolve conflicts directly on default branch.

@@ -60,7 +60,7 @@ and packs on its own schedule. `VERDICT=CLEAN` → say so and stop, **unless**
 dirt: offer `git gc`, but do not describe the repo as needing cleanup on its
 account. It can accompany either verdict.
 
-Tune the stale window with `--stale-days <n>` (default 90).
+Tune the stale window with `--stale-days <n>` (default owned by `git-stack.sh`).
 
 ## Step 2 — Report
 

@@ -15,7 +15,7 @@ Universal entry point for repository judgment before modifying files, history, o
 
 ## 1. Frame & Quick Guard
 
-- **Frame**: Identify outcome, operation, target paths, and explicit user authorizations. Target check: exists $\rightarrow$ inspect tracked/dirty. Never assume absent. Action request $\neq$ unstated branch/worktree/stash/rewrite authorization.
+- **Frame**: Identify outcome, operation, target paths, and explicit user authorizations. Target check: exists -> inspect tracked/dirty. Never assume absent. Action request != unstated branch/worktree/stash/rewrite authorization.
 - **Quick Guard**: Read-only local inspection (`bash scripts/git-stack.sh state --path <target>`). Resolves root, branch, clean status, `STASHES` count, linked worktrees, and `TARGET_OVERLAP` (named branches with unmerged commits touching the target). Absence of script degrades to direct git read commands.
 
 ## 2. Route Selection
@@ -24,9 +24,9 @@ Route enum is strictly pinned to: `execute | plan-work | recover | guardrails | 
 
 | Situation / Evidence | Route | Action / Reference |
 |---|---|---|
-| Plain commit/push/merge; staged or disjoint work; clean state | `execute` | Silent fast-lane $\rightarrow$ hand off directly to `git-ops` |
-| Dirty tree, target path modified elsewhere, `TARGET_OVERLAP` $\neq$ `NONE`, or unclassified history rewrite | `plan-work` | Read [orient.md](references/orient.md) $\rightarrow$ [workstreams.md](references/workstreams.md) |
-| Interrupted op (merge/rebase/cherry-pick), divergence, or suspected lost work | `recover` | Read [orient.md](references/orient.md) $\rightarrow$ [recover.md](references/recover.md) |
+| Plain commit/push/merge; staged or disjoint work; clean state | `execute` | Silent fast-lane -> hand off directly to `git-ops` |
+| Dirty tree, target path modified elsewhere, `TARGET_OVERLAP` != `NONE`, or unclassified history rewrite | `plan-work` | Read [orient.md](references/orient.md) -> [workstreams.md](references/workstreams.md) |
+| Interrupted op (merge/rebase/cherry-pick), divergence, or suspected lost work | `recover` | Read [orient.md](references/orient.md) -> [recover.md](references/recover.md) |
 | Branch protections, CI policies, environments, secret scanning posture | `guardrails` | Hand off to `repo-guardrails` |
 | Cleanup, changelog/doc sync, release packaging, README positioning | `specialist` | Route to `repo-hygiene`, `update-docs`, `git-ops`, or `repo-prettifier` |
 
