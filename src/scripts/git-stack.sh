@@ -45,7 +45,8 @@ Options:
   --allow-large         Explicitly allow staged files larger than 500KB
   --no-fetch            Skip fetch during push/release/cleanup checks
   --stale-days <n>      Stale-branch threshold for cleanup (default: 90)
-  --path <path>         Report existence/tracking/dirty state (repeatable; state only)
+  --path <path>         Report existence/tracking/dirty state plus branches with
+                        unmerged commits touching the path (repeatable; state only)
 
 Exit: 0 clean/done, 1 blocker or command failure, 2 nothing to do.
 EOF
@@ -126,8 +127,9 @@ if [[ "$OP" == state ]]; then
   fi
 
   worktree_count=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{n++} END{print n+0}')
-  printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nDEFAULT_BRANCH_SOURCE=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nWORKTREES=%s\n' \
-    "$root" "${branch:-DETACHED}" "$default_branch" "$default_branch_source" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$worktree_count"
+  stashes=$(git stash list 2>/dev/null | awk 'NF{n++} END{print n+0}')
+  printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nDEFAULT_BRANCH_SOURCE=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nSTASHES=%s\nWORKTREES=%s\n' \
+    "$root" "${branch:-DETACHED}" "$default_branch" "$default_branch_source" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$stashes" "$worktree_count"
 
   worktree_index=0
   while IFS= read -r line; do
@@ -160,8 +162,16 @@ if [[ "$OP" == state ]]; then
       dirty=no
       [[ -n "$(git status --porcelain -- "$target" 2>/dev/null)" ]] && dirty=yes
       overlap=NONE
-      overlap_commit=$(git log --branches --not HEAD -n 1 --format='%h' -- "$target" 2>/dev/null || true)
-      [[ -n "$overlap_commit" ]] && overlap="$overlap_commit"
+      # Named-branch overlap: which local branches carry unmerged commits that
+      # touch this path. Changed-file overlap is the strongest workstream
+      # evidence, so it must name candidates, not just a commit hash.
+      overlap_info=$(git log --branches --not HEAD -n 5 --format='%h' -- "$target" 2>/dev/null \
+        | while IFS= read -r sha; do
+            [[ -n "$sha" ]] || continue
+            names=$(git branch --contains "$sha" --format='%(refname:short)' 2>/dev/null | paste -sd, -)
+            [[ -n "$names" ]] && printf '%s(%s) ' "$sha" "$names"
+          done)
+      [[ -n "${overlap_info//[[:space:]]/}" ]] && overlap="${overlap_info% }"
       printf 'TARGET_%s_PATH=%q\nTARGET_%s_EXISTS=%s\nTARGET_%s_TRACKED=%s\nTARGET_%s_DIRTY=%s\nTARGET_%s_OVERLAP=%s\n' \
         "$target_index" "$target" "$target_index" "$exists" "$target_index" "$tracked" "$target_index" "$dirty" "$target_index" "$overlap"
     done

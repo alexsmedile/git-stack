@@ -37,7 +37,8 @@ when observable, and the smallest additional fact needed to choose a repair.
 For a suspected secret, redact the value and prioritize revocation/rotation when
 remote exposure is possible.
 
-If no safe recovery point can be established, stop with `ROUTE: owner` rather
+If no safe recovery point can be established, stop after the diagnostic report
+with `APPROVAL: NOT_READY` and no route, rather
 than offering a speculative destructive command.
 
 Completion: the report names protected state, a verified recovery point or
@@ -59,9 +60,13 @@ PROPOSAL:
   2. RECOMMENDED_PATH: <exact safe action / CLI command (e.g., git rebase --abort, conflict resolution)>
   3. ESCAPE_PATH: <fallback non-destructive alternative (e.g., backup branch or reset to verified ref)>
 APPROVAL: REQUIRED: execute <RECOMMENDED_PATH>
-ROUTE: <git-ops | owner | security response>
+ROUTE: <execute | recover | guardrails | specialist>
 NEXT: <exact authorized execution action or one clarifying inspection>
 ```
+
+`ROUTE` uses the vocabulary pinned in SKILL.md. When no safe recovery point can
+be established, stop after the report with `APPROVAL: NOT_READY` and no route —
+never offer a speculative destructive command.
 
 Prompt the user for authorization:
 ```text
