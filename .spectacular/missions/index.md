@@ -3,6 +3,8 @@
 
 | Ref | Type | Title | Source |
 |---|---|---|---|
+| `EV1` | Evidence | Skill Forge review artifacts for git-ops | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/evidence/EV1-skill-forge-review-artifacts.md` |
+| `EV2` | Evidence | Initial independent FROST review of M2 | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/evidence/EV2-initial-independent-frost-review.md` |
 | `M1` | Mission | Build the Git Operator governance kernel | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/M1-build-the-git-operator-governance-kernel.md` |
 | `M1/O1` | Objective | Freeze the minimum preflight evidence, routing result, authority order, failure model, and script-versus-model inclusion rule. | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/objectives/O1-freeze-the-minimum-preflight-evidence-routing-result-authority-order-failure-model-and-script-versus-model-inclusion-rule.md` |
 | `M1/O2` | Objective | Implement executable orientation, workstream selection, history classification, approval, and diagnostic recovery procedures. | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/objectives/O2-implement-executable-orientation-workstream-selection-history-classification-approval-and-diagnostic-recovery-procedures.md` |
@@ -10,3 +12,4 @@
 | `M1/O4` | Objective | Run focused fixtures, mechanical checks, and the pending issue-scoped independent verification; repair only scoped failures and leave the next Campaign blocks ready. | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/objectives/O4-run-focused-fixtures-mechanical-checks-and-the-pending-issue-scoped-independent-verification-repair-only-scoped-failures-and-leave-the-next-campaign-blocks-ready.md` |
 | `M1/RV1` | Review | Independent FROST review of M1 | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/reviews/RV1-independent-frost-review-of-m1.md` |
 | `M2` | Mission | Refactor git-ops as the focused Git and GitHub executor | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/M2-refactor-git-ops-as-the-focused-git-and-github-executor.md` |
+| `M2/RV1` | Review | Independent FROST repair review of M2 | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/reviews/RV1-independent-frost-repair-review-of-m2.md` |
