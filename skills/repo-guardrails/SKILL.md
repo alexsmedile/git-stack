@@ -69,9 +69,12 @@ STATE=ENFORCED|REQUIRED|RECOMMENDED|NOT_APPLICABLE|UNKNOWN
 EVIDENCE=<observed fact and source>
 DESIRED=<profile/override posture>
 OWNER=<repo-guardrails|git-ops|specialist|human/provider>
-AUTHORITY=<already requested|approval required|unavailable>
+AUTHORITY=<read-only|already requested|approval required|unavailable>
 VERIFY=<read-after-write or local postcondition>
 ```
+
+Use `read-only` for guard/audit observations that authorize no mutation;
+`already requested` is reserved for effects explicitly requested by the owner.
 
 Completion: every applicable control has exactly one state and owner; evidence
 and desired posture are distinct; UNKNOWN names the missing fact.

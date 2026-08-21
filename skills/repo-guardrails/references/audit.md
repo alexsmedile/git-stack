@@ -24,9 +24,8 @@ but do not add unnamed controls.
 Use direct `git` for local facts and `gh api`/`gh` for GitHub facts. Prefer stable
 provider fields; retain endpoint/command attribution for UNKNOWN and verification.
 
-Completion: every profile-applicable control has a finding, NOT_APPLICABLE has
-a reason, UNKNOWN names the unavailable observation, every catalog ID is
-accounted for exactly once, and no score hides severity.
+Completion: every catalog ID has exactly one finding; NOT_APPLICABLE has a
+reason, UNKNOWN names the unavailable observation, and no score hides severity.
 
 ## Propose
 
