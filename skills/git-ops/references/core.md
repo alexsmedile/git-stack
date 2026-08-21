@@ -1,129 +1,37 @@
-# git-stack / core — Git Reference & Guardrails
+# Identity and secret recovery
 
-This reference defines custom Git rules, conventions, regexes, and security checks for the `git-ops` skill.
+Use this when: an operation reports an author-identity, secret, clean-filter, or
+hook blocker. Ordinary Git operations do not load it.
 
----
+## Identity
 
-## git-stack.core.commit
-Logical units only. One commit = one clear story.
-- **Subject**: ≤72 chars, imperative mood ("fix" not "fixed"), lowercase type.
-- **Format**: `type(scope): description`
-- **Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
-- **Guardrails**: No secrets, `.env`, `node_modules/`, or build output. `git-stack.sh` owns the staged large-file threshold.
+Use the user's verified GitHub noreply alias when attribution/privacy requires
+it. Accept an existing `@users.noreply.github.com` address; never construct the
+account-specific alias. The commit/push runner calls `check-author-email.sh`.
+Use `--staged`, `--range`, or `--all` only for focused diagnosis. Fix future
+identity with scoped `git config`; existing-history repair needs authorization.
 
-### Commit identity (email)
-Prefer GitHub's **noreply** address over a real email — keeps the personal address out of public history while still linking commits to the profile.
-- **Format**: `ID+username@users.noreply.github.com` (accounts created after 2017-07-18). Plain `username@users.noreply.github.com` only links for pre-2017 accounts that enabled email privacy back then — do not assume it.
+## Secret response
 
-**First check** — if `git config user.email` already returns a `@users.noreply.github.com` address, it's set; use it as-is and skip setup. Only run the setup flow when the configured email is a real/personal address or unset.
+The commit runner owns staged added-lines scanning and uses `gitleaks` when
+available. A finding blocks until removed, made fixture-safe, or allowlisted by
+exact fingerprint after confirming it is not real.
 
-**Setup flow (walk the user through this):**
-1. Ask the user to open **https://github.com/settings/emails**.
-2. Have them tick **"Keep my email addresses private"**. GitHub then shows their noreply address (`ID+username@users.noreply.github.com`) right under that checkbox.
-3. Ask them to paste that exact address back.
-4. Set it: `git config --global user.email "<pasted-address>"` (per-repo: drop `--global`). If a repo has a local override with a real email, `git config --unset user.email` so it inherits global.
-5. Confirm: `git config user.email`.
+If a real secret entered remote/shared history: rotate or revoke first, establish
+affected refs/consumers, choose additive removal or a coordinated authorized
+rewrite, then verify refs and notify collaborators when SHAs changed. Deleting a
+working-tree value does not unpublish it.
 
-Never guess or construct the address — the ID is account-specific and only GitHub shows it.
+For a requested full audit, prefer `gitleaks detect --redact -v`. Otherwise
+source `scripts/secret-patterns.sh` and scan tracked files, relevant config, and
+`git log --all -p`. Networked credential verification is deliberate, not routine.
 
-### Author-email leak check
-The common commit/push runner calls this helper automatically. Run it directly
-only for identity-specific diagnosis:
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh" --staged   # before committing (checks configured user.email)
-bash "${CLAUDE_SKILL_DIR}/scripts/check-author-email.sh"            # before pushing (checks HEAD author + committer)
-```
-It flags three leak types and exits `1` on any (WARNING severity — surface it, let the user decide):
-- **personal-email** — any address that isn't a `@users.noreply.github.com` alias (real email leaking into public history).
-- **machine-hostname** (`name@Host.local`) — Git's auto-default when no email is set; unverifiable, so those commits stay **unlinked** on GitHub.
-- **github-web-signature** (`noreply@github.com`) — commits made via the GitHub web UI: the *author* is usually your noreply (fine) but the *committer* reads as "GitHub". Checking author **and** committer is the point — a `%ae`-only grep misses this.
+## Clean filters and hooks
 
-Why a script and not a manual check: during a mailmap migration the author can end up correct while the committer still leaks, and stale side-branch refs keep old emails after `main` is fixed. The script checks both fields and can scan a range (`--range origin/main..HEAD`) or all refs (`--all`). Allow a deliberate non-noreply email with `git config --add gitstack.allowedEmail you@example.com`.
+For intentionally secret-bearing versioned files, use a repository-owned clean
+filter plus `.gitattributes`, set it required, re-stage, and verify the index blob.
+Prefer generated config or a secret manager unless this is established policy.
 
-**Attribution rule**: the commit author must be the user's GitHub noreply alias so GitHub links the work to their profile. If the check warns, fix going forward with `git config --global user.email` (see setup flow above); fix history with `git filter-repo --mailmap` (rewrites author **and** committer, preserves dates and content, requires force-push).
-
-### Secrets / API key scan
-The common runner owns the canonical ADDED-lines scan:
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/git-stack.sh" commit
-```
-If matched: STOP. Block commit unless overridden or clean filter is set up (see `decisions.md`).
-
-### Installing the secret-block hook
-To protect a repo, run the installer to preview command:
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/install-hooks.sh" /path/to/repo
-```
-Options are copy (frozen script) or symlink (dynamic updates).
-
-### Repo-wide secret audit (on request)
-
-**Prefer gitleaks when it is installed** — it scans full history in one pass
-with ~170 rules plus entropy detection, catching secrets the built-in prefix
-patterns cannot (bare high-entropy values, embedded DB credentials, unprefixed
-vendor tokens):
-
-```bash
-gitleaks detect --redact -v          # full history
-gitleaks detect --redact -v --log-opts="-n 50"   # recent history only, faster
-```
-
-Not installed: `brew install gitleaks`. If the user declines, or gitleaks is
-unavailable, fall back to the built-in patterns below.
-
-For a public-launch audit where *verifying* whether a key is still live matters
-more than speed, `trufflehog git file://. --results=verified` reports only
-secrets that authenticate successfully. It is slower and makes network calls to
-third-party APIs, so it is a deliberate pre-publication check, not a routine one.
-
-Fallback — built-in patterns. Source the shared definition rather than pasting
-the regex, so this audit stays in step with the commit-time scan:
-```bash
-. "${CLAUDE_SKILL_DIR}/scripts/secret-patterns.sh"
-SECRET_RE="$GIT_STACK_SECRET_RE"
-
-# 1. Currently tracked files
-git ls-files -z | xargs -0 grep -nHE "$SECRET_RE" 2>/dev/null
-
-# 2. Config/env files (tracked or ignored)
-find . -type f \( -name '.env*' -o -name '*.env' -o -name 'config.toml' -o -name 'settings.json' -o -name 'secrets.*' -o -name '*.pem' -o -name '*.key' \) -not -path './.git/*' -not -path './node_modules/*' 2>/dev/null | xargs grep -nHE "$SECRET_RE" 2>/dev/null
-
-# 3. Full git history
-git log --all -p -- . | grep -nE "$SECRET_RE"
-```
-- **Live + Untracked Match**: HIGH severity. Rotate key, gitignore file.
-- **History Match**: CRITICAL. Rotate key, scrub using `git filter-repo`, force-push.
-
----
-
-## git-stack.core.branch
-- **Naming**: `feat/` `fix/` `refactor/` `docs/` `chore/` (e.g., `feat/login-flow`).
-
----
-
-## git-stack.core.merge & rebase
-- **Merge**: Use PRs on GitHub (preferred). Use `--no-ff` on `main` to preserve history if merging locally.
-- **Rebase**: Rebase a local feature branch onto `main` frequently, so the eventual merge is small.
-
----
-
-## git-stack.core.stash
-- Stash is a temporary holding area. Do not let stashes sit for days.
-- Always name stashes (`git stash push -m "description"`).
-
----
-
-## git-stack.core.worktree
-- Use separate directories to work on multiple branches in parallel.
-- Clean up when done (`git worktree remove`).
-
----
-
-## History rewriting (Squash to clean root)
-Safe squash to a single root commit via orphan branch:
-```bash
-git checkout --orphan clean-main
-git commit -m "feat: initial release — v1.0.0"
-git branch -M clean-main main
-git push --force-with-lease origin main
-```
+When explicitly asked for commit protection, run `scripts/install-hooks.sh
+<repo>` as a preview. Apply only the approved copy/symlink method and never
+overwrite an existing hook.

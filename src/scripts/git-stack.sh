@@ -21,6 +21,7 @@ REMOTE=origin
 ALLOW_MAIN=0
 ALLOW_LARGE=0
 NO_FETCH=0
+PUBLISH_TAG=0
 STALE_DAYS=90
 PATH_ARGS=()
 
@@ -36,9 +37,10 @@ Read-only reports (never write):
 
 Options:
   --execute             Perform the clean-path write after checks pass
-  --message <text>      Commit message (required to execute commit/push with staged changes)
+  --message <text>      Commit message (required to execute commit)
   --version <X.Y.Z>     Version for tag/release
   --remote <name>       Remote name (default: origin)
+  --publish-tag         With tag --execute, also publish the new tag to the remote
   --allow-main          Explicitly allow commit/push on the default branch
   --allow-large         Explicitly allow staged files larger than 500KB
   --no-fetch            Skip fetch during push/release/cleanup checks
@@ -63,6 +65,7 @@ while (($#)); do
     --allow-main) ALLOW_MAIN=1 ;;
     --allow-large) ALLOW_LARGE=1 ;;
     --no-fetch) NO_FETCH=1 ;;
+    --publish-tag) PUBLISH_TAG=1 ;;
     --stale-days) shift; STALE_DAYS=${1:-90} ;;
     --path) shift; PATH_ARGS+=("${1:-}") ;;
     -h|--help) usage; exit 0 ;;
@@ -72,6 +75,11 @@ while (($#)); do
 done
 
 case "$OP" in state|commit|push|tag|release|cleanup|scan) ;; *) usage; exit 1 ;; esac
+
+if ((PUBLISH_TAG)) && [[ "$OP" != tag || "$MODE" != execute ]]; then
+  printf 'VERDICT=BLOCKED\nBLOCKER=publish-tag-requires-tag-execute\n'
+  exit 1
+fi
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   printf 'VERDICT=BLOCKED\nOP=%s\nBLOCKER=not-a-git-repository\n' "$OP"
@@ -362,7 +370,7 @@ if [[ "$MODE" == check ]]; then
   exit 0
 fi
 
-if [[ "$OP" == commit || "$OP" == push ]]; then
+if [[ "$OP" == commit ]]; then
   if ((staged_count > 0)); then
     if [[ -z "$MESSAGE" ]]; then
       printf 'VERDICT=BLOCKED\nBLOCKER=missing-commit-message\n'
@@ -385,8 +393,11 @@ if [[ "$OP" == push ]]; then
   printf 'PUSHED=%s->%s/%s\n' "$branch" "$REMOTE" "$branch"
 elif [[ "$OP" == tag ]]; then
   git tag -a "v$VERSION" -m "Release v$VERSION" || { printf 'VERDICT=BLOCKED\nBLOCKER=tag-failed\n'; exit 1; }
-  git push --quiet "$REMOTE" "v$VERSION" || { printf 'VERDICT=BLOCKED\nBLOCKER=tag-push-failed\n'; exit 1; }
   printf 'TAGGED=v%s\n' "$VERSION"
+  if ((PUBLISH_TAG)); then
+    git push --quiet "$REMOTE" "v$VERSION" || { printf 'VERDICT=BLOCKED\nBLOCKER=tag-push-failed\n'; exit 1; }
+    printf 'PUBLISHED_TAG=%s/v%s\n' "$REMOTE" "$VERSION"
+  fi
 elif [[ "$OP" == release ]]; then
   printf 'VERDICT=CLEAN\nNEXT=bump-changelog-then-run-tag\n'
   exit 0

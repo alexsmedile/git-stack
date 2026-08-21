@@ -111,7 +111,7 @@ fi
   echo "  1. Remove the secret manually, then re-stage and commit."
   echo "  2. Move the value to a gitignored file and reference it via env var."
   echo "  3. If this file always contains secrets (e.g., a config backup),"
-  echo "     install a git clean filter — see git-ops/references/decisions.md"
+  echo "     install a git clean filter — see git-ops/references/core.md"
   echo "     → 'I want to back up a config file that always contains secrets'."
   if [ "$gitleaks_status" -eq 1 ]; then
     echo "  4. If a gitleaks hit is a placeholder or test fixture, allowlist it"

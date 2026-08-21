@@ -1,271 +1,43 @@
-# git-stack / workflows — Multi-step Sequences
-
-Workflows are the high-level layer. Each one orchestrates several atomic skills
-in a safe, opinionated order. Prefer workflows over raw commands — they encode
-context, sequencing, and guardrails that individual commands don't carry.
-
----
-
-## git-stack.workflow.feature
-
-**Purpose:** Ship a new feature from idea to merged PR.
-
-**Steps:**
-```
-1. Sync with latest main
-2. Create a feature branch
-3. Implement (with small commits along the way)
-4. Rebase onto main if it has moved forward
-5. Push and open PR
-6. Address review feedback
-7. Merge and clean up
-```
-
-**Full sequence:**
-```bash
-# 1. Sync
-git switch main
-git pull origin main
-
-# 2. Branch
-git switch -c feat/my-feature
-
-# 3. Implement → commit in small logical units
-git add <files>
-git commit -m "feat(scope): describe the change"
-# ... repeat for each logical step
-
-# 4. Rebase onto updated main (before PR)
-git fetch origin
-git rebase origin/main
-# Resolve any conflicts, then: git rebase --continue
-
-# 5. Push and open PR
-git push -u origin feat/my-feature
-gh pr create --title "feat(scope): my feature" --body "Closes #<issue>"
-
-# 6. If review requests changes:
-# Make the fix, then:
-git add <files>
-git commit -m "fix(scope): address review feedback"
-git push
-
-# 7. After approval — merge and clean up
-gh pr merge --squash --delete-branch
-git switch main
-git pull origin main
-```
-
-**Guardrails:**
-- Never skip the rebase step before opening a PR
-- Small, clear commits during development (squash on merge is fine)
-- Reference the issue number in the PR body
-
----
-
-## git-stack.workflow.bugfix
-
-**Purpose:** Fix a bug with a clear, safe, traceable path.
-
-**Steps:**
-```
-1. Understand the bug (reproduce, locate, assess impact)
-2. Sync main
-3. Create fix branch (naming: fix/<issue-id>-<short-description>)
-4. Fix + test
-5. Commit with clear message
-6. PR with context
-```
-
-**Full sequence:**
-```bash
-# 1. Reproduce first — don't fix blind
-# Run the failing test / reproduce the scenario
-
-# 2. Sync
-git switch main && git pull origin main
-
-# 3. Branch
-git switch -c fix/88-login-token-refresh
-
-# 4. Fix the bug
-# ... edit files ...
-
-# 5. Commit
-git add <files>
-git commit -m "fix(auth): prevent token refresh loop on every request
-
-The expiry check compared timestamps without accounting for clock skew.
-Added a 30-second buffer to the comparison.
-
-Closes #88"
-
-# 6. Push and PR
-git push -u origin fix/88-login-token-refresh
-gh pr create --title "fix(auth): prevent token refresh loop" --body "Closes #88"
-```
-
-**Guardrails:**
-- Reproduce the bug before writing a fix — fixes without reproduction can miss the root cause
-- Write a test that would have caught the bug (if the codebase has tests)
-- PR body must explain what the bug was and what the fix does
-
----
-
-## git-stack.workflow.refactor
-
-**Purpose:** Improve code structure without changing observable behavior.
-
-**Key principle:** Refactor in isolation. Don't mix refactoring with feature
-changes in the same PR — it makes review harder and introduces hidden risk.
-
-**Steps:**
-```
-1. Verify tests pass before you start
-2. Sync and branch
-3. Refactor in small increments (one thing at a time)
-4. Run tests after each step
-5. Commit frequently (each refactor step = a commit)
-6. PR with clear scope statement
-```
-
-**Full sequence:**
-```bash
-# 1. Baseline: confirm tests pass
-npm test  # or equivalent
-
-# 2. Sync and branch
-git switch main && git pull origin main
-git switch -c refactor/payment-calculation
-
-# 3-4. Refactor incrementally, test as you go
-# ... edit ...
-npm test
-git add <files>
-git commit -m "refactor(payment): extract discount calculation to utility"
-
-# ... next step ...
-git commit -m "refactor(payment): simplify tax rate lookup"
-
-# 5. Push and PR
-git push -u origin refactor/payment-calculation
-gh pr create --title "refactor(payment): extract and simplify calculation logic" \
-  --body "No behavior changes. Tests pass before and after.
-
-  - Extracted discount calc to \`utils/discount.ts\`
-  - Simplified tax rate lookup (was O(n), now O(1))
-
-  Refs #102"
-```
-
-**Guardrails:**
-- Tests passing before AND after is the contract for "refactor"
-- If behavior changes accidentally: stop, commit as a separate fix, then continue
-- Keep PR scope tight — one logical refactor per PR
-
----
-
-## git-stack.workflow.release
-
-**Purpose:** Cut a versioned release and publish it to GitHub.
-
-**Steps:**
-```
-1. Confirm main is stable (CI green, no pending critical fixes)
-2. Decide version number (semver)
-3. Update CHANGELOG / release notes
-4. Bump and audit manifests
-5. Commit and push
-6. Tag and push tag
-7. Create GitHub release
-```
-
-**Script-first sequence:**
-```bash
-# 1. Confirm CI is green
-gh run list --branch main --limit 3
-
-# 2. Decide version: MAJOR.MINOR.PATCH
-# Breaking change → bump MAJOR
-# New feature (backwards compat) → bump MINOR
-# Bug fix → bump PATCH
-
-# 3. Update CHANGELOG.md (if maintained manually)
-# Or use gh release --generate-notes for auto-generated notes
-
-# 4. Bump and audit manifests
-bash "$GIT_STACK_DIR/scripts/bump-manifests.sh" 1.2.0
-bash "$GIT_STACK_DIR/scripts/check-manifests.sh"
-
-# 5. Commit and push through the compact safety runner
-git add CHANGELOG.md
-# Run only after the user explicitly approves the release commit on main.
-bash "$GIT_STACK_DIR/scripts/git-stack.sh" push --execute \
-  --message "chore: release v1.2.0" --allow-main
-
-# 6. Check, tag, and push the annotated tag
-bash "$GIT_STACK_DIR/scripts/git-stack.sh" tag --version 1.2.0
-bash "$GIT_STACK_DIR/scripts/git-stack.sh" tag --version 1.2.0 --execute
-
-# 7. GitHub release
-gh release create v1.2.0 \
-  --title "v1.2.0" \
-  --generate-notes        # auto-generates from merged PRs
-
-# For a draft release (review before publishing):
-gh release create v1.2.0 --draft --generate-notes
-# Then publish when ready:
-gh release edit v1.2.0 --draft=false
-```
-
-**Guardrails:**
-- Never tag on a branch — only tag on main (or your release branch)
-- Always verify CI is green on main before tagging
-- Pass `--allow-main` only after the user explicitly approves the release commit
-- Use `--generate-notes` unless you maintain a manual changelog — it's reliable
-
----
-
-## git-stack.workflow.hotfix
-
-**Purpose:** Emergency fix for a production issue — fast but still safe.
-
-**The rule:** Even in emergencies, branch. Never push directly to main.
-
-```bash
-# 1. Branch from main (or the current production tag)
-git switch main && git pull origin main
-git switch -c hotfix/prod-payment-null
-
-# 2. Fix fast, test minimally
-# ... fix ...
-git add <files>
-git commit -m "fix(payment): handle null cart on checkout\n\nFixes production 500 on empty cart. Closes #99"
-
-# 3. PR with urgent label
-git push -u origin hotfix/prod-payment-null
-gh pr create --title "hotfix: handle null cart on checkout" \
-  --label "hotfix" --body "Emergency fix. Closes #99"
-
-# 4. Get at least one quick review, merge fast
-gh pr merge --squash --delete-branch
-
-# 5. Tag a patch release immediately
-git switch main && git pull origin main
-git tag -a v1.2.1 -m "Hotfix: null cart on checkout"
-git push origin v1.2.1
-gh release create v1.2.1 --generate-notes
-```
-
----
-
-## Workflow selection guide
-
-| Situation | Workflow |
-|-----------|----------|
-| New feature or capability | `workflow.feature` |
-| Reproducible bug to fix | `workflow.bugfix` |
-| Code quality / structure improvement | `workflow.refactor` |
-| Scheduled version release | `workflow.release` |
-| Production emergency | `workflow.hotfix` |
-| Unclear / mixed | Start with feature; split if scope creeps |
+# Multi-operation contracts
+
+Use this when: a release, hotfix, integration, stacked-work, or wrap-up sequence
+shares one completion boundary.
+
+## Release
+
+1. Resolve the version and verified release branch; ask once if impact is truly
+   ambiguous.
+2. Preview `git-stack.sh tag --version X.Y.Z` for cleanliness and tag availability.
+3. Route changelog writing to `update-docs`.
+4. Preview/apply `bump-manifests.sh`, then run `check-manifests.sh`; the post-write
+   audit is the version gate.
+5. For plugin bundles, run `validate-distribution.mjs --native` plus the project gate.
+6. Stage only release files; commit/push through the focused fast path when the
+   requested release includes publication.
+7. Recheck and create the local annotated tag. Publish it with `--publish-tag`,
+   and create/publish the GitHub Release, only when each provider effect is included.
+
+Done: commit, version sites, tag, requested remote refs, validations, and GitHub
+Release agree. Re-run the bumper once on drift; persistent drift blocks release.
+
+## Hotfix
+
+Use the production/release base named by local policy. Preserve the current
+feature tree, normally with a separate worktree. Prefer a fast reviewed PR; when
+stability demands rollback, revert first and diagnose separately. Done: the
+production-bound history contains the verified fix/revert and temporary state is
+retained intentionally or safely removed.
+
+## Integration and stacked work
+
+Identify dependency order and each intended base. Validate each diff against its
+immediate base. Rewrite only history whose ownership permits it. Do not advance a
+stacked child until the parent's replacement commit is known. Done: every branch
+targets the intended base, review diffs remain meaningful, and the integration
+gate passes without dropping either side.
+
+## Session wrap-up
+
+Preserve requested work and report residual state; wrap-up does not imply release.
+Push only when the user asked to publish/back up. Report commit/ref, remote state,
+remaining changes, blocked checks, and one next action.
