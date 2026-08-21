@@ -8,6 +8,7 @@
 | `EV1` | Evidence | Skill Forge review artifacts for git-ops | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/evidence/EV1-skill-forge-review-artifacts.md` |
 | `EV1` | Evidence | Skill Forge and paired cold evaluation for repo-guardrails | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/evidence/EV1-skill-forge-and-cold-evaluation.md` |
 | `EV2` | Evidence | Initial independent FROST review of M2 | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/evidence/EV2-initial-independent-frost-review.md` |
+| `EV2` | Evidence | Initial independent FROST review of M3 | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/evidence/EV2-initial-independent-frost-review.md` |
 | `M1` | Mission | Build the Git Operator governance kernel | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/M1-build-the-git-operator-governance-kernel.md` |
 | `M1/O1` | Objective | Freeze the minimum preflight evidence, routing result, authority order, failure model, and script-versus-model inclusion rule. | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/objectives/O1-freeze-the-minimum-preflight-evidence-routing-result-authority-order-failure-model-and-script-versus-model-inclusion-rule.md` |
 | `M1/O2` | Objective | Implement executable orientation, workstream selection, history classification, approval, and diagnostic recovery procedures. | `.spectacular/missions/M1-build-the-git-operator-governance-kernel/objectives/O2-implement-executable-orientation-workstream-selection-history-classification-approval-and-diagnostic-recovery-procedures.md` |
@@ -17,5 +18,6 @@
 | `M2` | Mission | Refactor git-ops as the focused Git and GitHub executor | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/M2-refactor-git-ops-as-the-focused-git-and-github-executor.md` |
 | `M2/RV1` | Review | Independent FROST repair review of M2 | `.spectacular/missions/M2-refactor-git-ops-as-the-focused-git-and-github-executor/reviews/RV1-independent-frost-repair-review-of-m2.md` |
 | `M3` | Mission | Introduce fast repository guardrails for Git and GitHub | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/M3-introduce-fast-repository-guardrails-for-git-and-github.md` |
+| `M3/RV1` | Review | Independent FROST repair review of M3 | `.spectacular/missions/M3-introduce-fast-repository-guardrails-for-git-and-github/reviews/RV1-independent-frost-repair-review-of-m3.md` |
 | `PROJECT` | Anchor | Git Operator | `.spectacular/PROJECT.md` |
 | `STACK` | Anchor | Technology and Distribution Stack | `.spectacular/STACK.md` |
