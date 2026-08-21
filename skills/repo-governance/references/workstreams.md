@@ -12,7 +12,10 @@ For the intended target paths, compare:
 1. working changes in each relevant worktree when observable;
 2. files changed by each candidate branch from its actual merge base;
 3. issue, PR, Mission, and stated outcome correspondence;
-4. branch-name similarity only as a weak final clue.
+4. path scoping in monorepos/subpackages (disjoint package paths do not trigger
+   overlap conflicts);
+5. parent branch relationship for stacked work (`STACK_BASE`);
+6. branch-name similarity only as a weak final clue.
 
 Never claim that an external session is live unless repository evidence or the
 owner says so. A linked worktree proves occupancy and possible concurrency, not
@@ -28,7 +31,8 @@ Completion: every plausible candidate is classified `MATCH`, `DISJOINT`, or
 | Current workstream owns the target files and its outcome includes the task | Reuse it | Reuse its tree if no concurrent hands are indicated. |
 | Existing workstream overlaps the files but ownership or intent conflicts | Stop for coordination; do not create a competing branch | Preserve both trees; do not switch, stash, or remove. |
 | Work is reviewable and disjoint from active work | Create or reuse a focused branch from the repository-approved base | Add a worktree only when the current tree is occupied or concurrent hands need isolation. |
-| Current tree is dirty with unrelated work | Select the task's appropriate branch | Use a separate worktree rather than disturbing the dirty tree. |
+| Current tree is dirty with uncommitted/unverified WIP | Select the task's appropriate branch | **Prefer an ephemeral worktree** off the target base rather than stashing or polluting active WIP. |
+| Work depends on an unmerged feature branch (`STACK_BASE`) | Branch off parent feature branch; preserve rebase/PR base metadata | Use separate worktree if parent branch tree is active. |
 | Tiny operation belongs to the current established workstream | Reuse current branch | Reuse current tree. |
 | Evidence is insufficient to distinguish overlap | Keep current state | Ask one narrow ownership question before choosing isolation. |
 

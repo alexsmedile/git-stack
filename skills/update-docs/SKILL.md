@@ -26,8 +26,8 @@ operations to the `git-ops` skill.
   files, or a diff that cannot be classified confidently.
 - **Changelog-only requests**: when the user asks for a changelog entry
   specifically, run Steps 1–3 and 6–7 and skip the doc-patching steps entirely.
-- **Box style**: left border only (`┌─`, `│`, `└─`). No right border, no corners
-  — they break on padding.
+- **Box style**: left border only (`┌─`, `│`, `└─`), always inside a
+  `text`-tagged code fence. Full rules: `git-ops` SKILL.md → "Report format".
 
 ## Step 1 — Baseline and change shape
 
@@ -123,15 +123,24 @@ skip that doc and continue, abort, or retry.
 
 ## Step 7 — Report
 
-```
+Emit one box inside a fenced code block tagged `text`. One line per file
+touched: name, then what changed. Never narrate the doc contents in the box.
+
+```text
 ┌─ DOCS UPDATED · v1.2.0 · internal + external
 │ CHANGELOG  [1.2.0] entry — 3 items
 │ README     2 lines patched
-│ AGENTS     1 line  (via symlink → agents_db/git-stack/AGENTS.md)
-│ CLAUDE     3 lines (via symlink → vault/.claude/CLAUDE.md)
+│ AGENTS     1 line  (symlink → agents_db/git-stack/AGENTS.md)
+│ CLAUDE     3 lines (symlink → vault/.claude/CLAUDE.md)
 │ next       tag and push via the git-ops release flow
 └─
 ```
+
+Formatting rules are in the `git-ops` skill under "Report format" — always
+fenced, left border only, no markdown inside the box, aligned label column.
+
+A summary of *what the docs now say* is prose: put it after the fence as plain
+sentences, never as `│`-prefixed lines. The box lists files and line counts only.
 
 Never run the tag, commit, or push yourself — report them as next actions.
 

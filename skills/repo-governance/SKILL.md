@@ -66,17 +66,13 @@ the next owning skill or reference.
 
 ## 4. Return or continue
 
-For a routine operation already requested by the user, continue through the
-owning skill when its focused checks pass. Before an unrequested structural,
-destructive, provider, or shared-history effect, return one authorization
-question containing:
+For a routine operation already requested by the user where `APPROVAL: NOT_NEEDED`
+and `ROUTE: execute`, continue immediately and silently to `git-ops` without
+emitting the full governance diagnostic block, presenting only the focused
+`git-ops` result upon completion.
 
-1. observed facts;
-2. proposed effect and exact target;
-3. principal risk and recovery point;
-4. a yes/no request to proceed.
-
-Every governance result uses this compact shape:
+When halting for user approval, entering `recover`, planning non-trivial workstreams,
+or delegating across subagent/process boundaries, emit the full structured result:
 
 ```text
 OUTCOME: <intended repository result>
@@ -89,8 +85,17 @@ APPROVAL: <NOT_NEEDED | REQUIRED: exact effect>
 NEXT: <one safe action>
 ```
 
-Completion: every field is present, facts are separated from judgment, and
-`NEXT` is executable by the named owner without rediscovering the decision.
+Before an unrequested structural, destructive, provider, or shared-history
+effect, halt and return one authorization question containing:
+
+1. observed facts;
+2. proposed effect and exact target;
+3. principal risk and recovery point;
+4. a yes/no request to proceed.
+
+Completion: every field is present when structured output is required, facts are
+separated from judgment, and `NEXT` is executable by the named owner without
+rediscovering the decision.
 
 ## Invariants
 

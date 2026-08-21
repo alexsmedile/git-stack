@@ -3,9 +3,10 @@
 Use this when: orientation finds unexpected, contradictory, interrupted, lost,
 or potentially destructive repository state.
 
-Recovery v1 diagnoses and stops. It does not reset, stash, abort, rewrite,
-force, delete, or remove a worktree. Once the state and intended repair are
-known and authorized, `git-ops` owns execution. Guided `/undo` is later scope.
+Recovery acts as an actionable flight director: it diagnoses safely, preserves all
+uncommitted and recent state, identifies exact recovery points (e.g. reflog hashes),
+and presents a concrete 3-part repair proposal for one-click authorization.
+Once authorized, `git-ops` executes the repair.
 
 ## 1. Preserve and classify
 
@@ -19,7 +20,7 @@ working tree and collect only read-only evidence needed for one class:
 | `DIVERGED_HISTORY` | Local/remote refs already available, merge base, ahead/behind, shared-history classification. |
 | `OCCUPIED_TARGET` | Worktree holding the branch, its path, visible dirty state, and whether removal would affect work. |
 | `MISSING_REF_OR_WORKTREE` | Refs, worktree registrations, and repository records that should name the missing target. |
-| `SUSPECTED_LOST_HISTORY` | Reflog entries and unreachable/dangling object evidence needed to identify a candidate recovery point. |
+| `SUSPECTED_LOST_HISTORY` | Reflog entries (`HEAD@{1}`, `refs/stash`, etc.) and unreachable/dangling object evidence needed to identify a candidate recovery point. |
 | `SECRET_EXPOSURE` | Whether the secret is only local or reached a remote; affected paths/commits without printing the value. |
 | `UNKNOWN` | Evidence needed for another class is unavailable or contradictory. |
 
@@ -31,7 +32,7 @@ and the evidence collection has not changed refs, index, files, or worktrees.
 
 ## 2. Establish containment and recovery point
 
-State what must remain untouched, the last verified good ref or filesystem state
+State what must remain untouched, the last verified good ref (e.g. `HEAD@{1}`) or filesystem state
 when observable, and the smallest additional fact needed to choose a repair.
 For a suspected secret, redact the value and prioritize revocation/rotation when
 remote exposure is possible.
@@ -42,7 +43,9 @@ than offering a speculative destructive command.
 Completion: the report names protected state, a verified recovery point or
 `UNKNOWN`, and the consequence of proceeding without it.
 
-## 3. Return the diagnostic stop
+## 3. Present the actionable recovery proposal
+
+Structure the recovery stop with full diagnostic clarity and an actionable 3-part repair plan:
 
 ```text
 OUTCOME: preserve work and recover <expected state>
@@ -51,16 +54,27 @@ FACTS: <read-only evidence>
 PROTECT: <files/refs/worktrees that must not change>
 RECOVERY_POINT: <ref/path/state | UNKNOWN>
 RISK: <flags and affected consumers>
-REPAIR: <candidate operation category | NEEDS_MORE_EVIDENCE>
-APPROVAL: REQUIRED: <exact repair effect> | NOT_READY
+PROPOSAL:
+  1. DIAGNOSIS: <what happened and what is safely preserved>
+  2. RECOMMENDED_PATH: <exact safe action / CLI command (e.g., git rebase --abort, conflict resolution)>
+  3. ESCAPE_PATH: <fallback non-destructive alternative (e.g., backup branch or reset to verified ref)>
+APPROVAL: REQUIRED: execute <RECOMMENDED_PATH>
 ROUTE: <git-ops | owner | security response>
-NEXT: <one safe diagnostic or authorized execution action>
+NEXT: <exact authorized execution action or one clarifying inspection>
+```
+
+Prompt the user for authorization:
+```text
+State: <diagnostic summary>.
+Protected: <what is preserved, including recovery ref>.
+Recommended: <exact recommended command/repair>.
+Escape path: <alternative option>.
+Authorize me to execute the recommended path? (Y/N)
 ```
 
 Rerunning recovery is safe: repeat orientation, compare facts with the prior
 report, and replace stale conclusions. Never infer that unchanged output proves
 another process is inactive.
 
-Completion: every field is populated, normal execution remains stopped, and the
-next step either gathers one missing fact or hands one exact authorized repair to
-its owner.
+Completion: every field is populated, normal execution remains stopped until approved,
+and the user is provided an unambiguous, safe path to restore working order.

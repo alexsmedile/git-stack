@@ -1,11 +1,12 @@
 ---
 name: git-ops
 description: >
-  Execute and validate a selected Git or GitHub operation—commit, push, branch,
-  worktree, merge, rebase, pull request, tag, release, or session wrap-up. Use
-  after repo-governance selects the workstream, or immediately for a direct
-  unambiguous operation. Not for ambiguous work placement, repository policy
-  audits, cleanup, documentation, or README presentation.
+  Focused execution and validation engine for selected Git and GitHub
+  operations—commit, push, branch, worktree, merge, rebase, pull request,
+  tag, release, or session wrap-up. Invoked by repo-governance after establishing
+  boundaries, or in programmatic execution with pre-verified repository context.
+  Not for ambiguous work placement, repository policy audits, cleanup,
+  documentation, or README presentation.
 metadata:
   version: "1.11.0"
 ---
@@ -19,14 +20,15 @@ invariant it enforces more reliably.
 ## Entry contract
 
 Accept either a governance result naming workstream, branch/worktree boundary,
-history class, flags, authority, and next operation; or a direct operation whose
-target and repository state are already unambiguous.
+history class, flags, authority, and next operation; or a focused direct execution
+where repository boundaries and targets are pre-verified. General conversational
+requests enter via `repo-governance`.
 
 Return ambiguous workstream selection to `repo-governance`. Route repository
 policy to `repo-guardrails`, cleanup to `repo-hygiene`, documentation to
 `update-docs`, and README positioning to `repo-prettifier`. If execution reveals
 an interrupted operation, unexpected divergence, occupied worktree, or evidence
-contradicting the input, stop and return to governance recovery with the facts.
+contradicting the input, stop immediately and return to governance recovery with the facts.
 
 ## Execute proportionally
 

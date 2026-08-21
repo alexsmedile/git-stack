@@ -17,7 +17,7 @@ Repo cleanup in three tiers by blast radius. Read `references/tiers.md` for the
 canonical checks, commands, and severity rules — this file owns the sequence and
 the confirmation gates.
 
-```
+```text
 Tier 1  report only        — dead/stale/unsynced branches, junk, stashes  (always safe)
 Tier 2  safe housekeeping  — git gc, remote/worktree prune                (the real space win)
 Tier 3  history rewrite    — purge big blobs, squash                      (DESTRUCTIVE)
@@ -68,7 +68,7 @@ Print one box from the counts above. Do **not** re-run raw git scans to build
 it. Fetch names only for categories the user chooses to act on in Step 3 — e.g.
 `git branch --merged main` when they accept the merged-branch deletion.
 
-```
+```text
 ┌─ CLEANUP REPORT · ~/code/example-repo · main
 │ merged branches   2   feature/login, fix/typo        (safe to delete)
 │ stale branches    1   wip/experiment  (4 months old)
@@ -80,7 +80,9 @@ it. Fetch names only for categories the user chooses to act on in Step 3 — e.g
 └─
 ```
 
-Left border only — no right `│`, no corners (they break on padding).
+Always inside a fenced code block tagged `text` — outside a fence the renderer
+reflows the border into a broken ladder. Left border only, no right `│`, no
+closing corners. Full rules: `git-ops` SKILL.md → "Report format".
 
 If everything is clean, say so in the box and stop.
 
@@ -111,7 +113,7 @@ clone.** Never reach this tier from a generic cleanup request.
    worth it.
 2. Present this warning and require an explicit non-abort choice:
 
-```
+```text
 ┌─ ⚠ HISTORY REWRITE — DESTRUCTIVE
 │ This rewrites all commit SHAs after the affected blob.
 │ A force-push is required. Every existing clone/fork BREAKS.
@@ -134,7 +136,7 @@ Never proceed past this gate without an explicit non-abort choice. Prefer
 
 ## Step 6 — Done box
 
-```
+```text
 ┌─ CLEANUP DONE
 │ deleted    2 merged branches
 │ gitignore  +2 lines (.DS_Store, dist/)
