@@ -71,3 +71,9 @@ repair regression, not reopen general review.
   unresolved because the first repair over-blocked.
 - Exceptional final issue-only verification: pass; `SAFE-02` resolved at
   `scripts/git-stack.sh:350-351,389-395`; no repair regression.
+- Primary reviewer identities, issue lists, dispositions, and reviewed tree are
+  retained in M2 Evidence `EV1-skill-forge-review-artifacts.md`.
+- Attributable cold routing/operation results are retained in
+  `skills/git-ops/evals/results.md`. Every Git/GitHub family passed paired
+  dominant/risky coverage; T03 truthfully reports the planned M3 guardrails
+  specialist as absent rather than claiming M2 implemented it.

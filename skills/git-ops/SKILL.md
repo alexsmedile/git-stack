@@ -125,4 +125,5 @@ Routine Git execution stays in the current agent. Independent review assesses
 the work product; it is not a substitute for running Git.
 
 Maintainers use [evals/prompts.md](evals/prompts.md) for cold routing and
-operation-contract regression checks; runtime operations do not load it.
+operation-contract checks; [evals/results.md](evals/results.md) retains the
+attributable M2 run. Runtime operations load neither file.
