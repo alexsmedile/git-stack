@@ -2,9 +2,9 @@
 type: Mission
 id: 019ff873-e260-72c2-a713-484b19508282
 title: Build the Git Operator governance kernel
-status: active
+status: completed
 created: "2026-08-21T16:42:28Z"
-updated: "2026-08-21T16:51:08Z"
+updated: "2026-08-21T19:23:24Z"
 activation:
     at: "2026-08-21T16:42:28Z"
     by: Alex
@@ -43,6 +43,12 @@ completion:
     - claim: executable-recovery-and-review
       pass_boundary: The orient, workstream, and recover references are executable procedures with ordered inputs, compact outputs, failure recovery, safe resume behavior, and checkable completion criteria; every previously recorded Skill Forge blocker is resolved and verified without turning the skill into a Git tutorial or command wrapper.
       proof_requirement: Skill Forge structural validation passes, three dominant/risky/near-miss prompt tests exist, and an issue-scoped fresh-context verifier closes `RG-INVOCATION-POLICY`, `RG-ROUTE-CONTRADICTION`, `RG-ORIENT-IS-PROMISSORY`, `RG-WORKSTREAM-IS-PROMISSORY`, `RG-RECOVERY-IS-PROMISSORY`, `RG-APPROVAL-UNSPECIFIED`, and `RG-COMPLETION-TOO-WEAK` with no original blocker remaining.
+completion_record:
+    at: "2026-08-21T19:23:24Z"
+    authorization: owner supplied --by after schema checks
+    by: Alex
+    review: RV1
+    reviewed_commit: 5e2e6a20c065e73e2561e31e1ab935a8e2f70eb8
 contract:
     fingerprint: sha256:802030ebc7ab61f13e3d9d35076ebc71938bf88d9158c9368ba17bb9880d631b
     ref: Contract:01a02533-1526-7162-8bc1-ce702b45ef40
@@ -86,6 +92,11 @@ owner: Alex
 ref: M1
 repair_budget: 2
 review: independent
+reviews:
+    - file: reviews/RV1-independent-frost-review-of-m1.md
+      id: 01a02533-d120-70d3-9848-272fc8e462f1
+      ref: RV1
+      verdict: pass
 run:
     current_objective: O1
     id: 019ff873-e260-7b5d-8636-d61672caae89
@@ -93,7 +104,7 @@ run:
     ref: R1
     repairs: 2
     started_at: "2026-08-21T16:42:28Z"
-    status: active
+    status: completed
 scope:
     mechanical:
         - .spectacular/
