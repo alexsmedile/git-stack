@@ -15,3 +15,7 @@ _archive/
 # Drafts, not distributed with the skill bundle
 articles/
 .spectacular/transactions/
+
+# Local-only: backups, snapshots, scratch — never committed
+_snapshots/
+_local/

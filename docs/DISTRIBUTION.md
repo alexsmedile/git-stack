@@ -10,7 +10,7 @@ adapters. It does not claim that one plugin manifest works in every harness.
 | Claude Code | Full native plugin | `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | Git marketplace |
 | Codex | Verified skill plugin | `.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | Codex marketplace source |
 | Cursor | Native skill-only plugin | `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json` | Local plugin, team marketplace, or public submission |
-| Antigravity | Native skill-only plugin | `plugin.json` | `agy plugin install` or plugin directory |
+| Antigravity | Agent Skills in the canonical skills root; optional plugin manifest for validation/package distribution | `plugin.json` plus `skills/*/SKILL.md` | Prefer `~/.gemini/config/skills` or project `.agents/skills`; use `agy plugin install` only when testing/distributing the plugin bundle |
 | OpenCode | Agent Skill, not a JS plugin | `skills/*/SKILL.md` | Skill installer or `npx skills` |
 
 Claude-only commands and the optional runner live under `adapters/claude/` and
@@ -90,23 +90,40 @@ Claude runner are intentionally excluded.
 
 ### Antigravity
 
-Validate and install a checkout with the CLI:
+Antigravity has a plugin installation surface, and this repository keeps a root
+`plugin.json` so the bundle can be validated and installed there:
 
 ```bash
 agy plugin validate .
 agy plugin install .
 ```
 
-The Antigravity app also discovers workspace plugins under `.agents/plugins/`
-and global plugins under `~/.gemini/config/plugins/`. The root `plugin.json`
-uses Antigravity's strict manifest schema and exposes only the shared skills.
+For day-to-day installation from the skills library, prefer the same canonical
+Agent Skills shape used by the other non-Claude harnesses: one direct folder per
+skill, each containing `SKILL.md`. This is what Antigravity's `/skill` picker is
+expected to discover reliably:
+
+```text
+~/.gemini/config/skills/<skill-name>/SKILL.md      # global app skill
+.agents/skills/<skill-name>/SKILL.md              # project skill
+```
+
+Do not rely on nested plugin-bundle paths such as
+`~/.gemini/antigravity-cli/plugins/<plugin>/skills/<skill-name>/SKILL.md` for
+global `/skill` autocomplete. The plugin directory is acknowledged and useful
+for native plugin validation/distribution, but skill-library installs should be
+flattened into the skills root.
+
 No Antigravity subagent adapter is shipped because its subagents inherit the
 parent model.
 
 For skill-only global installs, choose the surface explicitly:
 
 ```bash
+# Recommended: Antigravity app/global skill picker
 node skills/git-ops/scripts/install-harness.mjs antigravity --scope global --surface app
+
+# Optional legacy/CLI surface, only when you specifically want the CLI skill root
 node skills/git-ops/scripts/install-harness.mjs antigravity --scope global --surface cli
 ```
 
@@ -130,7 +147,8 @@ source and re-syncing, never by editing the copy.
 ### Skills on non-Claude harnesses
 
 Codex, Cursor, Antigravity, and OpenCode receive all four skills (`git-ops`,
-`repo-hygiene`, `update-docs`, `repo-prettifier`) from a single install:
+`repo-hygiene`, `update-docs`, `repo-prettifier`) as direct skill folders from a
+single install:
 
 ```bash
 node skills/git-ops/scripts/install-harness.mjs codex --scope project

@@ -61,10 +61,14 @@ Claude Code plugin agents support `model: sonnet`, but
 Other harnesses use incompatible agent schemas and paths. Keep the portable
 behavior in `SKILL.md` + scripts and treat agents as optional adapters. Use
 `scripts/install-harness.mjs` to install native adapters for Claude Code,
-Codex, Cursor, or OpenCode. The installer places all four skills into the
-harness skill root; harnesses without plugin commands invoke them
-conversationally. Antigravity subagents inherit the parent model, so the
-installer intentionally supports its skills only.
+Codex, Cursor, Antigravity, or OpenCode. The installer places all four skills
+directly into the harness skill root; harnesses without plugin commands invoke
+them conversationally. For Antigravity, prefer the canonical
+`~/.gemini/config/skills/<skill-name>/SKILL.md` or project `.agents/skills/`
+surface for skill-library installs; the plugin directory is for native plugin
+validation/distribution and is not the canonical `/skill` discovery surface.
+Antigravity subagents inherit the parent model, so the installer intentionally
+supports its skills only.
 
 Cursor and OpenCode runner adapters require an explicit model. Do not select a
 model merely because its ID is valid: verify that it is actually a smaller,
@@ -73,8 +77,10 @@ lower-cost choice for the user's account and plan.
 The Claude manifest explicitly points to `adapters/claude/agents/`. Do not put
 the runner under root `agents/`: Cursor and Antigravity also scan that name and
 must not parse Claude's `model: sonnet`. The Cursor and Codex manifests export
-only `skills/`; Antigravity uses root `plugin.json`; OpenCode consumes the Agent
-Skills directly because its plugins are JavaScript/TypeScript event modules.
+only `skills/`; Antigravity keeps root `plugin.json` for plugin-bundle
+validation/distribution while canonical skill installs are direct `skills/`
+folders; OpenCode consumes the Agent Skills directly because its plugins are
+JavaScript/TypeScript event modules.
 
 ## Scripts And The Sync Contract
 

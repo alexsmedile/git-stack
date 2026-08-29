@@ -70,12 +70,27 @@ cursor-agent --plugin-dir .
 Public distribution uses the Cursor Marketplace submission flow; team
 marketplaces import this GitHub repository.
 
-### Antigravity — native plugin
+### Antigravity — skills first, plugin optional
+
+Install the four skills directly into Antigravity's canonical global skill root:
+
+```bash
+node skills/git-ops/scripts/install-harness.mjs antigravity --scope global --surface app
+```
+
+This creates direct skill folders under `~/.gemini/config/skills/`, which is the
+surface expected by Antigravity's `/skill` picker.
+
+The repository also includes an Antigravity plugin manifest for validation and
+plugin-bundle distribution:
 
 ```bash
 agy plugin validate .
 agy plugin install .
 ```
+
+Do not rely on nested plugin paths for `/skill` discovery; flatten library skills
+into the skills root instead.
 
 ### OpenCode and universal Agent Skills
 
@@ -90,7 +105,7 @@ harness-native location with the bundled cross-platform Node installer:
 
 ```bash
 node skills/git-ops/scripts/install-harness.mjs cursor --scope global
-node skills/git-ops/scripts/install-harness.mjs antigravity --scope global --surface cli
+node skills/git-ops/scripts/install-harness.mjs antigravity --scope global --surface app
 node skills/git-ops/scripts/install-harness.mjs opencode --scope global
 ```
 
