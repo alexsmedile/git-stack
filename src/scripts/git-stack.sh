@@ -29,9 +29,9 @@ OP_MACHINE=0
 
 usage() {
   cat <<'EOF'
-Usage: git-stack.sh <state|classify|diffsum|conflicts|switch-check|commit|push|tag|release|cleanup|scan|worktrees|branches|topology|tree> [options]
+Usage: git-stack.sh <state|classify|diffsum|conflicts|switch-check|commit|push|tag|release|cleanup|scan|worktrees|branches|topology|tree|ship> [options]
 
-Write ops: commit, push, tag, release
+Write ops: commit, push, tag, release, ship
 Read-only reports (never write):
   state               Compact local branch/status/worktree/target facts
   classify            History ownership evidence (upstream, dependents, protection)
@@ -43,16 +43,17 @@ Read-only reports (never write):
   worktrees           Active worktrees map (path, branch, dirty status, HEAD commit)
   branches            Branch status (upstream, ahead/behind, merged, worktree location)
   topology / tree     ASCII branch hierarchy and stack topology
+  ship                Atomic preflight + commit + push + post-verify pipeline
 
 Options:
   --execute             Perform the clean-path write after checks pass
-  --message <text>      Commit message (required to execute commit)
+  --message <text>      Commit message (required to execute commit/ship)
   --version <X.Y.Z>     Version for tag/release
   --remote <name>       Remote name (default: origin)
   --publish-tag         With tag --execute, also publish the new tag to the remote
-  --allow-main          Explicitly allow commit/push on the default branch
+  --allow-main          Explicitly allow commit/push/ship on the default branch
   --allow-large         Explicitly allow staged files larger than 500KB
-  --no-fetch            Skip fetch during push/release/cleanup checks
+  --no-fetch            Skip fetch during push/release/cleanup/ship checks
   --stale-days <n>      Stale-branch threshold for cleanup (default: 90)
   --path <path>         Report existence/tracking/dirty state plus branches with
                         unmerged commits touching the path (repeatable; state only)
@@ -88,7 +89,7 @@ while (($#)); do
   shift
 done
 
-case "$OP" in state|commit|push|tag|release|cleanup|scan|classify|diffsum|conflicts|triage|switch-check|worktrees|branches|topology|tree) ;; *) usage; exit 1 ;; esac
+case "$OP" in state|commit|push|tag|release|cleanup|scan|classify|diffsum|conflicts|triage|switch-check|worktrees|branches|topology|tree|ship) ;; *) usage; exit 1 ;; esac
 
 if ((PUBLISH_TAG)) && [[ "$OP" != tag || "$MODE" != execute ]]; then
   printf 'VERDICT=BLOCKED\nBLOCKER=publish-tag-requires-tag-execute\n'
@@ -813,7 +814,7 @@ warnings=()
 add_blocker() { blockers+=("$1"); }
 add_warning() { warnings+=("$1"); }
 
-if [[ "$OP" == commit || "$OP" == push ]]; then
+if [[ "$OP" == commit || "$OP" == push || "$OP" == ship ]]; then
   if [[ -z "$branch" ]]; then
     add_blocker detached-head
   elif [[ "$branch" == "$default_branch" && "$ALLOW_MAIN" -ne 1 ]]; then
@@ -872,7 +873,7 @@ if [[ "$OP" == commit || "$OP" == push ]]; then
   fi
 fi
 
-if [[ "$OP" == push || "$OP" == tag || "$OP" == release ]]; then
+if [[ "$OP" == push || "$OP" == tag || "$OP" == release || "$OP" == ship ]]; then
   if ! git remote get-url "$REMOTE" >/dev/null 2>&1; then
     add_blocker "missing-remote:$REMOTE"
   elif [[ "$NO_FETCH" -ne 1 ]] && ! git fetch --quiet "$REMOTE" >/dev/null 2>&1; then
@@ -898,7 +899,7 @@ if [[ "$OP" == push || "$OP" == tag || "$OP" == release ]]; then
     add_blocker "unpushed-commits:$outgoing"
   fi
 
-  if [[ "$OP" == push || "$OP" == release ]]; then
+  if [[ "$OP" == push || "$OP" == release || "$OP" == ship ]]; then
     bash "$SCRIPT_DIR/check-manifests.sh" >/dev/null 2>&1
     manifest_exit=$?
     if [[ "$manifest_exit" -eq 1 ]]; then
@@ -937,6 +938,10 @@ if [[ "$MODE" == check ]]; then
     printf 'VERDICT=NOTHING_TO_DO\n'
     exit 2
   fi
+  if [[ "$OP" == ship && "$staged_count" -eq 0 && "$outgoing" -eq 0 ]]; then
+    printf 'VERDICT=NOTHING_TO_DO\n'
+    exit 2
+  fi
   printf 'VERDICT=CLEAN\n'
   exit 0
 fi
@@ -962,6 +967,48 @@ if [[ "$OP" == push ]]; then
     git push --quiet --set-upstream "$REMOTE" "$branch" || { printf 'VERDICT=BLOCKED\nBLOCKER=push-failed\n'; exit 1; }
   fi
   printf 'PUSHED=%s->%s/%s\n' "$branch" "$REMOTE" "$branch"
+elif [[ "$OP" == ship ]]; then
+  commit_created=no
+  commit_sha=""
+  commit_subj=""
+  if ((staged_count > 0)); then
+    if [[ -z "$MESSAGE" ]]; then
+      printf 'VERDICT=BLOCKED\nBLOCKER=missing-commit-message\n'
+      exit 1
+    fi
+    if ! git commit -m "$MESSAGE" >/dev/null; then
+      printf 'VERDICT=BLOCKED\nBLOCKER=commit-failed\n'
+      exit 1
+    fi
+    commit_created=yes
+    commit_sha=$(git log -1 --format='%h')
+    commit_subj=$(git log -1 --format='%s')
+    printf 'COMMIT=%s %s\n' "$commit_sha" "$commit_subj"
+  fi
+
+  if git rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
+    git push --quiet || { printf 'VERDICT=BLOCKED\nBLOCKER=push-failed\n'; exit 1; }
+  else
+    git push --quiet --set-upstream "$REMOTE" "$branch" || { printf 'VERDICT=BLOCKED\nBLOCKER=push-failed\n'; exit 1; }
+  fi
+  printf 'PUSHED=%s->%s/%s\n' "$branch" "$REMOTE" "$branch"
+
+  upstream_sha=$(git rev-parse -q --verify '@{upstream}' 2>/dev/null || true)
+  head_sha=$(git rev-parse -q --verify HEAD 2>/dev/null || true)
+  if [[ "$upstream_sha" != "$head_sha" ]]; then
+    printf 'VERDICT=BLOCKED\nBLOCKER=postcondition-failed:head-diverged-from-upstream\n'
+    exit 1
+  fi
+  printf 'POSTCONDITION=VERIFIED\n'
+
+  if ((VISUAL)); then
+    c_info="${commit_sha:-$(git log -1 --format='%h')} ${commit_subj:-$(git log -1 --format='%s')}"
+    printf '┌─ SHIPPED · %s · %s\n' "$branch" "${commit_sha:-$(git log -1 --format='%h')}"
+    printf '│ commit   %s\n' "$c_info"
+    printf '│ push     %s -> %s/%s\n' "$branch" "$REMOTE" "$branch"
+    printf '│ status   clean · in sync with remote\n'
+    printf '└─\n'
+  fi
 elif [[ "$OP" == tag ]]; then
   git tag -a "v$VERSION" -m "Release v$VERSION" || { printf 'VERDICT=BLOCKED\nBLOCKER=tag-failed\n'; exit 1; }
   printf 'TAGGED=v%s\n' "$VERSION"
