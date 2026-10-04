@@ -80,7 +80,7 @@ for (const [name, manifest] of manifests) {
 }
 
 requireValue(Array.isArray(claude.agents) && claude.agents.length === 1 && claude.agents[0] === "./adapters/claude/agents/git-stack-runner.md", "claude:agent-adapter-path");
-requireValue(claude.commands === "./adapters/claude/commands/", "claude:commands-adapter-path");
+requireValue(claude.skills === "./skills/", "claude:skills-path");
 requireValue(fs.existsSync(path.join(root, "adapters/claude/agents/git-stack-runner.md")), "claude:agent-adapter-missing");
 requireValue(!fs.existsSync(path.join(root, "agents")), "portable-root:claude-agent-leak");
 requireValue(!fs.existsSync(path.join(root, "commands")), "portable-root:claude-command-leak");
@@ -124,16 +124,9 @@ requireValue(readme.includes(`badge/version-${version}`), "readme:version-badge"
 requireValue(changelog.includes(`## [${version}]`), "changelog:top-version");
 requireValue(readme.includes("docs/DISTRIBUTION.md"), "readme:distribution-link");
 requireValue(fs.existsSync(path.join(root, "docs/DISTRIBUTION.md")), "docs:distribution-missing");
-requireValue(fs.existsSync(path.join(root, "skills/git-ops/scripts/install-shortcuts.mjs")), "claude:shortcuts-installer-missing");
 requireValue(fs.existsSync(path.join(root, "src/sync-scripts.mjs")), "scripts:sync-source-missing");
 for (const [skill, script] of [["git-ops", "git-stack.sh"], ["repo-hygiene", "git-stack.sh"], ["update-docs", "git-stack.sh"]]) {
   requireValue(fs.existsSync(path.join(root, `skills/${skill}/scripts/${script}`)), `scripts:${skill}:${script}-missing`);
-}
-requireValue(readme.includes("install-shortcuts.mjs"), "readme:shortcuts-installer-link");
-requireValue(fs.readFileSync(path.join(root, "docs/DISTRIBUTION.md"), "utf8").includes("install-shortcuts.mjs"), "docs:shortcuts-installer-link");
-const expectedCommands = ["commit", "push", "release", "changelog", "update-docs", "wrap-up", "cleanup"];
-for (const command of expectedCommands) {
-  requireValue(fs.existsSync(path.join(root, `adapters/claude/commands/${command}.md`)), `command:${command}:missing`);
 }
 for (const skill of expectedSkills) {
   const skillFile = path.join(root, `skills/${skill}/SKILL.md`);

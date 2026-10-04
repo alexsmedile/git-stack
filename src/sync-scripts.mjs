@@ -30,7 +30,6 @@ const distribution = {
     "install-hooks.sh",
     "pre-commit-block-secrets.sh",
     "install-harness.mjs",
-    "install-shortcuts.mjs",
     "validate-distribution.mjs",
   ],
   "repo-hygiene": ["git-stack.sh", "secret-patterns.sh"],

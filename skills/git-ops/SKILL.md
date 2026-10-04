@@ -1,6 +1,9 @@
 ---
 name: git-ops
-description: Focused execution and postcondition validation engine for Git & GitHub operations (commit, push, branch, worktree, merge, rebase, PR, tag, release). Invoked by repo-governance or in pre-verified contexts.
+description: >-
+  Focused execution and postcondition validation engine for Git & GitHub operations.
+  Triggers on "commit", "push", "ship", "worktrees", "branches", "branch topology",
+  "merge", "rebase", "tag", "release", "wrap-up", or when executing repository mutations.
 metadata:
   version: "1.13.0"
 ---

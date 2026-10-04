@@ -13,11 +13,12 @@ adapters. It does not claim that one plugin manifest works in every harness.
 | Antigravity | Agent Skills in the canonical skills root; optional plugin manifest for validation/package distribution | `plugin.json` plus `skills/*/SKILL.md` | Prefer `~/.gemini/config/skills` or project `.agents/skills`; use `agy plugin install` only when testing/distributing the plugin bundle |
 | OpenCode | Agent Skill, not a JS plugin | `skills/*/SKILL.md` | Skill installer or `npx skills` |
 
-Claude-only commands and the optional runner live under `adapters/claude/` and
-are declared explicitly by the Claude manifest. Keeping them outside root
-`commands/` and `agents/` prevents Antigravity from converting Claude commands
-to skills and prevents Cursor or Antigravity from parsing `model: sonnet` as
-their own agent configuration. Routine Git operations do not use the runner.
+The bundle is 100% Agent Skills standard (`skills/`). The optional Claude runner
+lives under `adapters/claude/agents/git-stack-runner.md` and is declared explicitly
+by the Claude manifest. Keeping it outside root `agents/` prevents Cursor or
+Antigravity from parsing `model: sonnet` as their own agent configuration.
+Legacy slash commands (`commands/`) are deprecated across harnesses; all operations
+auto-activate conversationally or via skill invocation. Routine operations do not use the runner.
 
 ## Install and update
 
@@ -35,22 +36,15 @@ claude plugin marketplace update git-stack
 claude plugin update git-stack@git-stack
 ```
 
-Plugin commands are namespaced by Claude Code. The portable form is
-`/git-stack:commit` and `/git-stack:push`. If you prefer short project-local or
-user-global aliases, install them explicitly:
+Or install skills directly into Claude Code's skill directory:
 
 ```bash
-# Project-local: creates .claude/commands/commit.md and push.md
-node skills/git-ops/scripts/install-shortcuts.mjs --scope project
+# Project-local: installs into .claude/skills/
+node skills/git-ops/scripts/install-harness.mjs claude --scope project
 
-# User-global: creates aliases under ~/.claude/commands/
-node skills/git-ops/scripts/install-shortcuts.mjs --scope user
+# User-global: installs into ~/.claude/skills/
+node skills/git-ops/scripts/install-harness.mjs claude --scope global
 ```
-
-The installer is copy-based by default, refuses to overwrite existing commands,
-records ownership in `.git-stack-shortcuts.json`, and supports `--dry-run`,
-`--mode symlink`, `--force`, `--commands`, and `--uninstall`. The plugin files
-remain authoritative; rerun the installer after a plugin update.
 
 Claude Code uses the version in `.claude-plugin/plugin.json` as its cache key.
 The marketplace entry intentionally omits `version`; setting it in both places

@@ -3,7 +3,7 @@ name: repo-hygiene
 description: >
   Repo hygiene and space reclaim — surface dead, stale, and unsynced branches,
   untracked junk, forgotten stashes, and .git bloat, then clean up safely. Use
-  for "clean up this repo", "prune branches", "why is .git so big", "reclaim
+  for "clean up this repo", "cleanup", "prune branches", "why is .git so big", "reclaim
   space", or repo triage before publishing. Read-only by default; history
   rewrites stay behind an explicit destructive-action gate.
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion

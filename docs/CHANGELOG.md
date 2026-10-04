@@ -9,11 +9,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Visual representations for active worktrees (`git-stack.sh worktrees --visual`), reporting active status (`●`/`○`), relative paths, clean/dirty state, lock status, and HEAD commit summaries in a left-border ASCII box (`┌─ WORKTREES`).
 - Visual representations for branch status (`git-stack.sh branches --visual`), reporting upstream sync, ahead/behind counts, merged status, external worktree occupancy, and staleness (`┌─ BRANCHES`).
 - ASCII branch hierarchy and stack topology (`git-stack.sh topology` / `tree`), calculating merge-base ancestry to visualize stacked PR branches, worktree occupancy, and upstream divergence (`┌─ BRANCH TOPOLOGY`).
-- Fast-path Claude slash commands: `/worktrees`, `/branches`, and `/tree`.
 - Compact summary box mode for repository state via `git-stack.sh state --visual`.
+- Atomic fast-lane pipeline `git-stack.sh ship` chaining preflight checks, commit, push, and remote postcondition parity verification.
 
 ### Changed
-- `skills/git-ops` bumped to `v1.13.0` with visual report formats and updated execution contracts.
+- Transitioned to 100% universal Agent Skills standard (`skills/`): removed deprecated Claude slash command adapters (`adapters/claude/commands/`) and aligned `.claude-plugin/plugin.json` to export `"skills": "./skills/"`.
+- `skills/git-ops` bumped to `v1.13.0` with visual report formats, atomic ship fast path, and densified direct negative constraints.
 
 ## [1.14.0] — 2026-08-21
 

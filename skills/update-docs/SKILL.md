@@ -3,7 +3,7 @@ name: update-docs
 description: >
   Update project documentation after changes — CHANGELOG.md entries (Keep a
   Changelog, [Unreleased] or versioned), README, STATUS.md, AGENTS/CLAUDE/GEMINI
-  files, and docs/. Use for "update the changelog", "write a changelog entry",
+  files, and docs/. Use for "update the changelog", "changelog", "write a changelog entry",
   "update the docs", "document these changes", or doc refresh before a release.
   Resolves symlinks and edits the real file. Does not commit, push, or tag.
 allowed-tools: Bash, Read, Edit, Write, Glob, AskUserQuestion

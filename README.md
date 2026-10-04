@@ -13,21 +13,16 @@ Antigravity, and OpenCode — script-first orchestration with safe defaults.
 
 ## What's Inside
 
-| Component | Invoked as | What it does |
-|-----------|-----------|-------------|
-| `git-ops` | `/git-stack:git-ops` | Orchestration layer for all Git/GitHub work — decision guide, atomic ops, multi-step workflows |
-| `repo-prettifier` | `/git-stack:repo-prettifier` | Interactive README upgrade — positions, designs, and writes a high-converting README |
-| `/commit` | `/git-stack:commit` | Safe local commit with the full pre-flight check suite |
-| `/push` | `/git-stack:push` | Everything `/commit` does, plus remote state checks and a guarded push |
-| `/release` | `/git-stack:release` | Bump manifests, update changelog, commit, push, and tag a release |
-| `/changelog` | `/git-stack:changelog` | Draft and write a CHANGELOG entry for changes since the last tag |
-| `/update-docs` | `/git-stack:update-docs` | Update CHANGELOG + all project docs after major changes |
-| `/wrap-up` | `/git-stack:wrap-up` | Full release wrap-up — version bump, changelog, README patches, commit, tag, push |
-| `/cleanup` | `/git-stack:cleanup` | Repo hygiene scan — dead/stale branches, junk, stashes, space reclaim. Read-only by default |
+| Skill | Trigger Keywords | What it does |
+|---|---|---|
+| `git-ops` | commit, push, ship, branches, worktrees, topology, merge, rebase, tag | Focused execution and postcondition validation engine for Git & GitHub operations |
+| `repo-governance` | orient, plan-work, recover, guardrails | Universal repository governance front door, workstream selection, and collision avoidance |
+| `repo-guardrails` | guardrails, audit posture, branch protection | Guard operations, audit repository posture, and policy enforcement |
+| `repo-hygiene` | cleanup, prune branches, reclaim space | Repo cleanup and space reclaim (prune branches, clean junk, gc, stashes) |
+| `update-docs` | changelog, update docs, document changes | Update CHANGELOG and documentation after changes |
+| `repo-prettifier` | improve README, prettify repo | Interactive README upgrade — positions, designs, and writes a high-converting README |
 
-Claude Code namespaces plugin commands, so `/git-stack:commit` and
-`/git-stack:push` are canonical; the short `/commit` and `/push` forms are
-optional aliases installed by `install-shortcuts.mjs`.
+All skills conform to the universal Agent Skills standard (`SKILL.md`) and auto-activate conversationally across Claude Code, Codex, Cursor, Antigravity, and OpenCode.
 
 ## Install
 
@@ -38,17 +33,11 @@ claude plugin marketplace add alexsmedile/git-stack
 claude plugin install git-stack@git-stack
 ```
 
-Or open Claude Code's interactive `/plugin` manager.
-
-Claude Code namespaces plugin commands. Use `/git-stack:commit` and
-`/git-stack:push` directly, or install short aliases explicitly:
+Or install skills directly into `.claude/skills/`:
 
 ```bash
-node skills/git-ops/scripts/install-shortcuts.mjs --scope project
+node skills/git-ops/scripts/install-harness.mjs claude --scope project
 ```
-
-This creates `.claude/commands/commit.md` and `push.md`. It is opt-in,
-copy-based by default, collision-safe, and reversible with `--uninstall`.
 
 ### Codex — marketplace
 
@@ -209,17 +198,14 @@ Transforms a bare README into a high-converting project page. Works interactivel
 Design patterns, tone rules, and badge templates live in
 `references/design.md`, loaded at phase 3 rather than on every invocation.
 
-## Commands
+## Skill Workflows
 
-These slash commands are Claude-specific adapters under
-`adapters/claude/commands/`. Plugin commands use the `git-stack:` namespace;
-the unnamespaced `/commit` and `/push` forms are optional standalone aliases
-installed by `install-shortcuts.mjs`. Other harnesses use the portable skills
-rather than parsing Claude command frontmatter or environment variables.
+Workflows are skill-first, deterministic, and auto-activated across all harnesses.
+Agents invoke them conversationally or via standard skill delegation.
 
-### `/commit`
+### Commit & Ship Preflight
 
-Safe local commit. Thin orchestrator over the bundled compact preflight:
+Safe local commit and ship pipeline with the bundled compact preflight:
 
 - Secrets scan (canonical patterns from `git-ops/references/core.md` → OpenAI, Anthropic, GitHub, AWS, Google, Slack, Hugging Face, PEM blocks, etc.)
 - `.env` detection
@@ -231,7 +217,7 @@ Safe local commit. Thin orchestrator over the bundled compact preflight:
 
 Stops only on a blocker; clean staged changes commit without delegation.
 
-### `/push`
+### Push & Remote Verification
 
 Everything `/commit` does, plus:
 

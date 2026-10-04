@@ -21,6 +21,6 @@
     "devtools",
     "claude-code"
   ],
-  "commands": "./adapters/claude/commands/",
+  "skills": "./skills/",
   "agents": ["./adapters/claude/agents/git-stack-runner.md"]
 }

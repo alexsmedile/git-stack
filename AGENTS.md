@@ -18,7 +18,7 @@ git-stack/
 ├── .codex-plugin/        # Codex plugin manifest
 ├── .cursor-plugin/       # Cursor skill-only manifest + marketplace
 ├── .agents/plugins/      # Codex repo marketplace
-├── adapters/claude/       # Claude-only commands and optional Sonnet runner
+├── adapters/claude/       # Optional Claude Sonnet runner adapter
 ├── src/                   # SOURCE OF TRUTH for scripts — edit here, never in skills/
 │   ├── scripts/           # Canonical Git, install, manifest, and release scripts
 │   └── sync-scripts.mjs   # Distributes src/scripts/ into each skill that needs them
@@ -138,18 +138,16 @@ AGENTS/CLAUDE/GEMINI, `docs/`). It never commits, pushes, or tags.
 interview → visual design decisions → write. Never write a README before
 completing phases 1–3 with the user.
 
-**`adapters/claude/commands/`** contains seven Claude slash commands that are
-thin pointers into these skills — `commit`, `push`, `release`, `wrap-up`, and
-`changelog` into `git-ops` or `update-docs`; `cleanup` into `repo-hygiene`.
-They carry no procedure of their own. When a workflow changes, edit the skill,
-not the command.
+All six skills are self-contained and auto-activate across harnesses via trigger
+phrases in their frontmatter. Legacy slash commands (`commands/`) are deprecated;
+all operations are executed directly through the skills.
 
 `repo-hygiene` and `update-docs` call the script's read-only reports
 (`git-stack.sh cleanup` / `scan`), which return counts instead of raw git
 output. Each calls its own generated copy at `scripts/git-stack.sh`, so no skill
 depends on another skill's path.
 
-Script subcommands: `commit|push|tag|release` write; `cleanup|scan` never do.
+Script subcommands: `commit|push|tag|release|ship` write; `cleanup|scan|state|worktrees|branches|topology` never do.
 When adding a workflow, put the mechanical scan in the script and leave only
 judgment in the skill.
 
@@ -170,25 +168,15 @@ Thresholds and overrides (large files, `--allow-large`, `--allow-main`) live in
 
 ## Installing / Using
 
-Skills are installed via `apm`:
+Skills are installed via `apm` or `install-harness.mjs`:
 
 ```bash
-# Install git-ops globally
+# Install git-ops globally via apm
 apm --mode skills install git-ops
 
-# Install project-scoped
-apm --mode skills --project-dir /path/to/project install git-ops
+# Or install for a specific harness (claude, codex, cursor, antigravity, opencode)
+node skills/git-ops/scripts/install-harness.mjs claude --scope project
 ```
-
-Commands (`commit.md`, `push.md`, `changelog.md`, `update-docs.md`,
-`release.md`, `wrap-up.md`, `cleanup.md`) are Claude Code slash-command
-pointers — they do not go through `apm`.
-
-Claude plugin commands are namespaced (`/git-stack:commit`,
-`/git-stack:push`). The optional `skills/git-ops/scripts/install-shortcuts.mjs`
-installer can copy or link selected commands into `.claude/commands/` or the
-user Claude command directory for short `/commit` and `/push` aliases. It is
-collision-safe and reversible; plugin command files remain authoritative.
 
 ## Editing Skills
 
