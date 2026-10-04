@@ -3,6 +3,18 @@
 All notable changes are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [1.15.0] — 2026-10-04
+
+### Added
+- Visual representations for active worktrees (`git-stack.sh worktrees --visual`), reporting active status (`●`/`○`), relative paths, clean/dirty state, lock status, and HEAD commit summaries in a left-border ASCII box (`┌─ WORKTREES`).
+- Visual representations for branch status (`git-stack.sh branches --visual`), reporting upstream sync, ahead/behind counts, merged status, external worktree occupancy, and staleness (`┌─ BRANCHES`).
+- ASCII branch hierarchy and stack topology (`git-stack.sh topology` / `tree`), calculating merge-base ancestry to visualize stacked PR branches, worktree occupancy, and upstream divergence (`┌─ BRANCH TOPOLOGY`).
+- Fast-path Claude slash commands: `/worktrees`, `/branches`, and `/tree`.
+- Compact summary box mode for repository state via `git-stack.sh state --visual`.
+
+### Changed
+- `skills/git-ops` bumped to `v1.13.0` with visual report formats and updated execution contracts.
+
 ## [1.14.0] — 2026-08-21
 
 ### Added

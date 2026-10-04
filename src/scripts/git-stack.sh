@@ -24,10 +24,12 @@ NO_FETCH=0
 PUBLISH_TAG=0
 STALE_DAYS=90
 PATH_ARGS=()
+VISUAL=0
+OP_MACHINE=0
 
 usage() {
   cat <<'EOF'
-Usage: git-stack.sh <state|classify|diffsum|conflicts|switch-check|commit|push|tag|release|cleanup|scan> [options]
+Usage: git-stack.sh <state|classify|diffsum|conflicts|switch-check|commit|push|tag|release|cleanup|scan|worktrees|branches|topology|tree> [options]
 
 Write ops: commit, push, tag, release
 Read-only reports (never write):
@@ -38,6 +40,9 @@ Read-only reports (never write):
   switch-check        Pre-checkout collision & worktree occupancy check
   cleanup             Repo hygiene counts: branches, stashes, junk, size
   scan                Commit subjects since last tag, grouped by type
+  worktrees           Active worktrees map (path, branch, dirty status, HEAD commit)
+  branches            Branch status (upstream, ahead/behind, merged, worktree location)
+  topology / tree     ASCII branch hierarchy and stack topology
 
 Options:
   --execute             Perform the clean-path write after checks pass
@@ -51,6 +56,8 @@ Options:
   --stale-days <n>      Stale-branch threshold for cleanup (default: 90)
   --path <path>         Report existence/tracking/dirty state plus branches with
                         unmerged commits touching the path (repeatable; state only)
+  --visual              Emit left-border ASCII box (┌─ / │ / └─) output
+  --machine             Force machine-readable KEY=value output
 
 Exit: 0 clean/done, 1 blocker or command failure, 2 nothing to do.
 EOF
@@ -73,13 +80,15 @@ while (($#)); do
     --publish-tag) PUBLISH_TAG=1 ;;
     --stale-days) shift; STALE_DAYS=${1:-90} ;;
     --path) shift; PATH_ARGS+=("${1:-}") ;;
+    --visual) VISUAL=1 ;;
+    --machine) OP_MACHINE=1; VISUAL=0 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'VERDICT=BLOCKED\nBLOCKER=unknown-option:%s\n' "$1"; exit 1 ;;
   esac
   shift
 done
 
-case "$OP" in state|commit|push|tag|release|cleanup|scan|classify|diffsum|conflicts|triage|switch-check) ;; *) usage; exit 1 ;; esac
+case "$OP" in state|commit|push|tag|release|cleanup|scan|classify|diffsum|conflicts|triage|switch-check|worktrees|branches|topology|tree) ;; *) usage; exit 1 ;; esac
 
 if ((PUBLISH_TAG)) && [[ "$OP" != tag || "$MODE" != execute ]]; then
   printf 'VERDICT=BLOCKED\nBLOCKER=publish-tag-requires-tag-execute\n'
@@ -100,6 +109,24 @@ if [[ -z "$default_branch" ]]; then
     *) default_branch=main; default_branch_source=heuristic-main ;;
   esac
 fi
+
+rel_path() {
+  local p="$1"
+  local base="${2:-$root}"
+  if [[ "$p" == "$base" ]]; then
+    printf '.'
+  elif [[ "$p" == "$base"/* ]]; then
+    printf './%s' "${p#"$base"/}"
+  else
+    local parent_dir
+    parent_dir=$(dirname "$base")
+    if [[ "$p" == "$parent_dir"/* ]]; then
+      printf '../%s' "${p#"$parent_dir"/}"
+    else
+      printf '%s' "${p/#"$HOME"/~}"
+    fi
+  fi
+}
 
 # ---- read-only reports: emit compact counts and exit, never write ----------
 if [[ "$OP" == state ]]; then
@@ -132,6 +159,22 @@ if [[ "$OP" == state ]]; then
 
   worktree_count=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{n++} END{print n+0}')
   stashes=$(git stash list 2>/dev/null | awk 'NF{n++} END{print n+0}')
+
+  if ((VISUAL)); then
+    disp_root=$(rel_path "$root")
+    up_info="${upstream:-local-only}"
+    if [[ -n "$upstream" ]]; then
+      up_info="$upstream (ahead $ahead · behind $behind)"
+    fi
+    printf '┌─ REPO STATE · %s · %s\n' "$disp_root" "${branch:-DETACHED}"
+    printf '│ status    staged %s · unstaged %s · untracked %s\n' "$staged" "$unstaged" "$untracked"
+    printf '│ upstream  %s\n' "$up_info"
+    printf '│ worktrees %s active\n' "$worktree_count"
+    printf '│ stashes   %s\n' "$stashes"
+    printf '└─\n'
+    exit 0
+  fi
+
   printf 'OP=state\nROOT=%s\nBRANCH=%s\nDEFAULT_BRANCH=%s\nDEFAULT_BRANCH_SOURCE=%s\nSTAGED=%s\nUNSTAGED=%s\nUNTRACKED=%s\nUPSTREAM=%s\nAHEAD=%s\nBEHIND=%s\nINTERRUPTED=%s\nSTASHES=%s\nWORKTREES=%s\n' \
     "$root" "${branch:-DETACHED}" "$default_branch" "$default_branch_source" "$staged" "$unstaged" "$untracked" "${upstream:-NONE}" "$ahead" "$behind" "$interrupted" "$stashes" "$worktree_count"
 
@@ -181,6 +224,352 @@ if [[ "$OP" == state ]]; then
     done
   fi
   printf 'TARGETS=%s\nVERDICT=OBSERVED\n' "$target_index"
+  exit 0
+fi
+
+if [[ "$OP" == worktrees ]]; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  wt_count=0
+  wt_lines=()
+  wt_path=""
+  wt_branch=""
+  wt_head=""
+  wt_locked=""
+  wt_prunable=""
+
+  flush_worktree() {
+    [[ -n "$wt_path" ]] || return 0
+    wt_count=$((wt_count + 1))
+    local is_curr="no"
+    local marker="○"
+    if [[ "$wt_path" == "$root" ]]; then
+      is_curr="yes"
+      marker="●"
+    fi
+
+    local dirty_cnt
+    dirty_cnt=$(git -C "$wt_path" status --porcelain 2>/dev/null | awk 'NF{n++} END{print n+0}')
+    local dirty_str="clean"
+    ((dirty_cnt > 0)) && dirty_str="dirty (+$dirty_cnt)"
+
+    local lock_str=""
+    [[ -n "$wt_locked" ]] && lock_str=" [locked]"
+    [[ -n "$wt_prunable" ]] && lock_str="${lock_str} [prunable]"
+
+    local disp_path
+    disp_path=$(rel_path "$wt_path")
+
+    local commit_info
+    commit_info=$(git -C "$wt_path" log -1 --format='(at %h · %s)' 2>/dev/null || true)
+
+    if ((VISUAL)); then
+      wt_lines+=("│  $marker  $(printf '%-20s %-16s %-12s%s %s' "${wt_branch:-DETACHED}" "$disp_path" "$dirty_str" "$lock_str" "$commit_info")")
+    else
+      printf 'WORKTREE_%s_CURRENT=%s\nWORKTREE_%s_BRANCH=%s\nWORKTREE_%s_PATH=%q\nWORKTREE_%s_DIRTY=%s\nWORKTREE_%s_HEAD=%s\nWORKTREE_%s_LOCKED=%s\n' \
+        "$wt_count" "$is_curr" "$wt_count" "${wt_branch:-DETACHED}" "$wt_count" "$wt_path" "$wt_count" "$dirty_cnt" "$wt_count" "${wt_head:0:7}" "$wt_count" "$([[ -n "$wt_locked" ]] && printf 'yes' || printf 'no')"
+    fi
+
+    wt_path=""
+    wt_branch=""
+    wt_head=""
+    wt_locked=""
+    wt_prunable=""
+  }
+
+  while IFS= read -r line; do
+    case "$line" in
+      'worktree '*)
+        flush_worktree
+        wt_path=${line#worktree }
+        ;;
+      'HEAD '*)
+        wt_head=${line#HEAD }
+        ;;
+      'branch refs/heads/'*)
+        wt_branch=${line#branch refs/heads/}
+        ;;
+      'detached')
+        wt_branch="DETACHED"
+        ;;
+      'locked'*)
+        wt_locked="yes"
+        ;;
+      'prunable'*)
+        wt_prunable="yes"
+        ;;
+    esac
+  done < <(git worktree list --porcelain 2>/dev/null)
+  flush_worktree
+
+  if ((VISUAL)); then
+    printf '┌─ WORKTREES · %d active %s\n' "$wt_count" "$([[ $wt_count -eq 1 ]] && printf 'tree' || printf 'trees')"
+    for l in "${wt_lines[@]}"; do
+      printf '%s\n' "$l"
+    done
+    printf '└─\n'
+  else
+    printf 'OP=worktrees\nWORKTREE_COUNT=%s\nVERDICT=OBSERVED\n' "$wt_count"
+  fi
+  exit 0
+fi
+
+if [[ "$OP" == branches ]]; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  cutoff=$(( $(date +%s) - STALE_DAYS * 86400 ))
+
+  branches=()
+  while IFS= read -r b; do
+    [[ -n "$b" ]] && branches+=("$b")
+  done < <(git for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+
+  branch_count=${#branches[@]}
+  if ((!VISUAL)); then
+    printf 'OP=branches\nDEFAULT_BRANCH=%s\nBRANCH_COUNT=%s\n' "$default_branch" "$branch_count"
+  fi
+
+  max_len=12
+  for b in "${branches[@]}"; do
+    len=${#b}
+    ((len > max_len && len <= 28)) && max_len=$len
+  done
+
+  b_idx=0
+  b_lines=()
+  for b in "${branches[@]}"; do
+    b_idx=$((b_idx + 1))
+    marker="○"
+    is_curr="no"
+    if [[ "$b" == "$branch" ]]; then
+      marker="●"
+      is_curr="yes"
+    fi
+
+    upstream=$(git rev-parse --abbrev-ref --symbolic-full-name "${b}@{upstream}" 2>/dev/null || true)
+    up_str="[local only]"
+    div_str=""
+    ahead=0
+    behind=0
+    if [[ -n "$upstream" ]]; then
+      up_str="[$upstream]"
+      counts=$(git rev-list --left-right --count "$upstream...$b" 2>/dev/null || printf '0 0')
+      behind=${counts%%[[:space:]]*}
+      ahead=${counts##*[[:space:]]}
+      if ((ahead > 0 && behind > 0)); then
+        div_str="ahead $ahead · behind $behind"
+      elif ((ahead > 0)); then
+        div_str="ahead $ahead"
+      elif ((behind > 0)); then
+        div_str="behind $behind"
+      else
+        div_str="in sync"
+      fi
+    fi
+
+    merged="no"
+    merged_str=""
+    if [[ "$b" != "$default_branch" ]]; then
+      if git merge-base --is-ancestor "$b" "$default_branch" 2>/dev/null; then
+        merged="yes"
+        merged_str="(merged into $default_branch)"
+      fi
+    fi
+
+    held_wt=$(git worktree list --porcelain 2>/dev/null | awk -v tb="refs/heads/$b" '
+      /^worktree /{wt=$2}
+      /^branch /{if ($2 == tb) {print wt}}
+    ')
+    wt_str=""
+    if [[ -n "$held_wt" && "$held_wt" != "$root" ]]; then
+      rel_wt=$(rel_path "$held_wt")
+      wt_str="[worktree: $rel_wt]"
+    fi
+
+    status_str=""
+    if [[ "$b" == "$branch" ]]; then
+      d_cnt=$(git status --porcelain 2>/dev/null | awk 'NF{n++} END{print n+0}')
+      if ((d_cnt > 0)); then status_str="dirty (+$d_cnt)"; else status_str="clean"; fi
+    fi
+
+    ts=$(git log -1 --format='%ct' "$b" 2>/dev/null || echo 0)
+    stale="no"
+    stale_str=""
+    if [[ "$b" != "$default_branch" && "$ts" -gt 0 && "$ts" -lt "$cutoff" ]]; then
+      stale="yes"
+      rel_age=$(git log -1 --format='%cr' "$b" 2>/dev/null || echo "old")
+      stale_str="stale ($rel_age)"
+    fi
+
+    if ((VISUAL)); then
+      details=""
+      for part in "$div_str" "$up_str" "$merged_str" "$wt_str" "$stale_str" "$status_str"; do
+        if [[ -n "$part" ]]; then
+          if [[ -z "$details" ]]; then details="$part"; else details="$details  $part"; fi
+        fi
+      done
+      b_lines+=("│  $marker $(printf "%-${max_len}s  %s" "$b" "$details")")
+    else
+      printf 'BRANCH_%s_NAME=%s\nBRANCH_%s_CURRENT=%s\nBRANCH_%s_UPSTREAM=%s\nBRANCH_%s_AHEAD=%s\nBRANCH_%s_BEHIND=%s\nBRANCH_%s_MERGED=%s\nBRANCH_%s_WORKTREE=%s\nBRANCH_%s_STALE=%s\n' \
+        "$b_idx" "$b" "$b_idx" "$is_curr" "$b_idx" "${upstream:-NONE}" "$b_idx" "$ahead" "$b_idx" "$behind" "$b_idx" "$merged" "$b_idx" "${held_wt:-NONE}" "$b_idx" "$stale"
+    fi
+  done
+
+  if ((VISUAL)); then
+    printf '┌─ BRANCHES · default: %s\n' "$default_branch"
+    for l in "${b_lines[@]}"; do
+      printf '%s\n' "$l"
+    done
+    printf '└─\n'
+  else
+    printf 'VERDICT=OBSERVED\n'
+  fi
+  exit 0
+fi
+
+if [[ "$OP" == topology || "$OP" == tree ]]; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  ((VISUAL == 0 && OP_MACHINE == 0)) && VISUAL=1
+
+  branches=()
+  while IFS= read -r b; do
+    [[ -n "$b" ]] && branches+=("$b")
+  done < <(git for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)
+
+  edges=()
+  for b in "${branches[@]}"; do
+    if [[ "$b" == "$default_branch" ]]; then
+      continue
+    fi
+
+    best_parent="$default_branch"
+    best_depth=0
+
+    mb_def=$(git merge-base "$b" "$default_branch" 2>/dev/null || true)
+    if [[ -n "$mb_def" ]]; then
+      best_depth=$(git rev-list --count "$mb_def" 2>/dev/null || echo 0)
+    fi
+
+    for cand in "${branches[@]}"; do
+      if [[ "$cand" == "$b" || "$cand" == "$default_branch" ]]; then
+        continue
+      fi
+      if git merge-base --is-ancestor "$b" "$cand" 2>/dev/null; then
+        continue
+      fi
+      mb_cand=$(git merge-base "$b" "$cand" 2>/dev/null || true)
+      if [[ -n "$mb_cand" ]]; then
+        depth=$(git rev-list --count "$mb_cand" 2>/dev/null || echo 0)
+        if ((depth > best_depth)); then
+          best_depth=$depth
+          best_parent=$cand
+        fi
+      fi
+    done
+
+    edges+=("$b:$best_parent")
+  done
+
+  get_children() {
+    local parent="$1"
+    ((${#edges[@]} == 0)) && return 0
+    for edge in "${edges[@]}"; do
+      if [[ "${edge#*:}" == "$parent" ]]; then
+        printf '%s\n' "${edge%%:*}"
+      fi
+    done
+  }
+
+  if ((VISUAL)); then
+    printf '┌─ BRANCH TOPOLOGY\n'
+    root_up=$(git rev-parse --abbrev-ref --symbolic-full-name "${default_branch}@{upstream}" 2>/dev/null || true)
+    root_marker="○"
+    [[ "$default_branch" == "$branch" ]] && root_marker="●"
+    printf '│  %s %s%s\n' "$root_marker" "$default_branch" "${root_up:+ ($root_up)}"
+
+    render_node() {
+      local p_node="$1"
+      local prefix="$2"
+      local kids=()
+      while IFS= read -r k; do
+        [[ -n "$k" ]] && kids+=("$k")
+      done < <(get_children "$p_node")
+
+      local total=${#kids[@]}
+      [[ $total -eq 0 ]] && return 0
+      local i=0
+
+      for child in "${kids[@]}"; do
+        i=$((i + 1))
+        local is_last=0
+        [[ $i -eq $total ]] && is_last=1
+
+        local branch_char="├── "
+        local next_prefix="${prefix}│   "
+        if ((is_last)); then
+          branch_char="└── "
+          next_prefix="${prefix}    "
+        fi
+
+        local c_marker="○"
+        [[ "$child" == "$branch" ]] && c_marker="●"
+
+        local c_up=$(git rev-parse --abbrev-ref --symbolic-full-name "${child}@{upstream}" 2>/dev/null || true)
+
+        local ahead=$(git rev-list --count "${p_node}..${child}" 2>/dev/null || echo 0)
+        local behind=$(git rev-list --count "${child}..${p_node}" 2>/dev/null || echo 0)
+
+        local rel_info=""
+        if ((ahead == 0)); then
+          rel_info="(merged)"
+        elif ((behind > 0)); then
+          rel_info="(ahead $ahead · behind $behind)"
+        else
+          rel_info="(ahead $ahead)"
+        fi
+
+        local stacked_info=""
+        if [[ "$p_node" != "$default_branch" ]]; then
+          stacked_info="[stacked]"
+        fi
+
+        local wt_tag=""
+        local held=$(git worktree list --porcelain 2>/dev/null | awk -v tb="refs/heads/$child" '
+          /^worktree /{wt=$2}
+          /^branch /{if ($2 == tb) {print wt}}
+        ')
+        if [[ -n "$held" && "$held" != "$root" ]]; then
+          local r_wt=$(rel_path "$held")
+          wt_tag="[worktree: $r_wt]"
+        fi
+
+        local details="$rel_info"
+        [[ -n "$stacked_info" ]] && details="$details $stacked_info"
+        [[ -n "$wt_tag" ]] && details="$details $wt_tag"
+        [[ -n "$c_up" ]] && details="$details ($c_up)"
+
+        printf '│  %s%s%s %s %s\n' "$prefix" "$branch_char" "$c_marker" "$child" "$details"
+
+        render_node "$child" "$next_prefix"
+      done
+    }
+
+    render_node "$default_branch" ""
+    printf '└─\n'
+  else
+    printf 'OP=topology\nDEFAULT_BRANCH=%s\nNODE_COUNT=%s\n' "$default_branch" "${#edges[@]}"
+    idx=0
+    if ((${#edges[@]} > 0)); then
+      for edge in "${edges[@]}"; do
+        idx=$((idx + 1))
+        b="${edge%%:*}"
+        p="${edge#*:}"
+        ahead=$(git rev-list --count "$p..$b" 2>/dev/null || echo 0)
+        behind=$(git rev-list --count "$b..$p" 2>/dev/null || echo 0)
+        printf 'NODE_%s_BRANCH=%s\nNODE_%s_PARENT=%s\nNODE_%s_AHEAD=%s\nNODE_%s_BEHIND=%s\n' \
+          "$idx" "$b" "$idx" "$p" "$idx" "$ahead" "$idx" "$behind"
+      done
+    fi
+    printf 'VERDICT=OBSERVED\n'
+  fi
   exit 0
 fi
 
