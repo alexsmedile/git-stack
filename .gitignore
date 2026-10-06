@@ -12,6 +12,11 @@ _archive/
 .octopus/
 .spectacular.local/
 
+# Personal local companions (make-a-change OPF §3.5) — never committed.
+*.local.*
+.octopus.local/
+*.local/
+
 # Drafts, not distributed with the skill bundle
 articles/
 .spectacular/transactions/

@@ -1,16 +1,16 @@
+---
+schema: make-a-change/todo/v1
+extensions:
+  - "octopus:all"
+---
+
 # TODO
 
 ## Backlog
 
 - [] git-stack to git-operator?
 
-- [x] Send git issue to current repo or specified repo ~backlog → octopus:send-git-issue-current-repo-specified-repo
-  ```yaml
-  kind: feat
-  ```
-
-- [x] Maintain version index/manifest/aggregator ~backlog → octopus:maintain-version-index-manifest-aggregator
-  > Script that checks version across repos — index/aggregator for version tracking.
+- [ ] Send git issue to current repo or specified repo ~backlog
   ```yaml
   kind: feat
   ```
@@ -62,6 +62,12 @@
   > contributors or an explicit `--team` flag, and never make `gh` a hard
   > dependency — degrade to the local-only checks when it is absent or
   > unauthenticated.
+  ```yaml
+  kind: feat
+  ```
+
+- [ ] Maintain version index/manifest/aggregator ~backlog
+  > Script that checks version across repos — index/aggregator for version tracking.
   ```yaml
   kind: feat
   ```
